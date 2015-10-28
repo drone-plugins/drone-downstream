@@ -1,0 +1,30 @@
+build:
+  image: golang:1.5
+  environment:
+    - GO15VENDOREXPERIMENT=1
+    - GOOS=linux
+    - GOARCH=amd64
+    - CGO_ENABLED=0
+  commands:
+    - go get
+    - go build
+    - go test
+
+publish:
+  docker:
+    username: drone
+    password: $$DOCKER_PASS
+    email: $$DOCKER_EMAIL
+    repo: plugins/drone-downstream
+    when:
+      branch: master
+
+plugin:
+  name: Git
+  desc: Trigger builds for downstream repositories
+  type: clone
+  image: plugins/drone-downstream
+  labels:
+    - trigger
+    - drone
+
