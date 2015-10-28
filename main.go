@@ -55,6 +55,8 @@ func main() {
 			fmt.Printf("Error: unable to trigger build for %s.\n", entry)
 			os.Exit(1)
 		}
+
+		fmt.Printf("Restarting build %d for %s\n", build.Number, entry)
 	}
 }
 

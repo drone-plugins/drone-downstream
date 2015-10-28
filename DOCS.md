@@ -1,6 +1,6 @@
 Use this plugin to trigger builds for a list of downstream repositories. This is useful when updates to a repository have downstream impacts that should also be tested. These are the configuration options:
 
-* `repos` - list of repositories to trigger
+* `repositories` - list of repositories to trigger
 * `token` - drone API token from your user setttings
 
 The following is a sample configuration in your .drone.yml file:
@@ -8,7 +8,7 @@ The following is a sample configuration in your .drone.yml file:
 ```yaml
 notify:
   downstream:
-    repos:
+    repositories:
       - octocat/Hello-World
       - octocat/Spoon-Knife@master
     when:
