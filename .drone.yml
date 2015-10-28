@@ -20,7 +20,7 @@ publish:
       branch: master
 
 plugin:
-  name: Git
+  name: Trigger
   desc: Trigger builds for downstream repositories
   type: clone
   image: plugins/drone-downstream
