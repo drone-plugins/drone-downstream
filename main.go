@@ -14,7 +14,7 @@ import (
 type Params struct {
 	Repos []string `json:"repositories"`
 	Token string   `json:"token"`
-	Fork string	`json:"fork"`
+	Fork bool	`json:"fork"`
 }
 
 func main() {
