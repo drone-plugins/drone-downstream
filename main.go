@@ -49,7 +49,7 @@ func main() {
 				fmt.Printf("Error: unable to trigger a new build for %s.\n", entry)
 				os.Exit(1)
 		}
-		else {
+		} else {
 		// get the latest build for the specified repository
 		build, err := client.BuildLast(owner, name, branch)
 		if err != nil {
