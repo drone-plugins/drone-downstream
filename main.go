@@ -42,7 +42,7 @@ func main() {
 			fmt.Printf("Error: unable to parse repository name %s.\n", entry)
 			os.Exit(1)
 		}
-		if v.fork) == "true" {
+		if v.fork == "true" {
 		// start a new  build
 		_, err = client.BuildFork(owner, name, build.Number)
 			if err != nil {
