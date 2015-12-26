@@ -14,7 +14,7 @@ import (
 type Params struct {
 	Repos []string `json:"repositories"`
 	Token string   `json:"token"`
-	Fork bool	`json:"fork"`
+	Fork  bool     `json:"fork"`
 }
 
 func main() {
@@ -42,35 +42,35 @@ func main() {
 			fmt.Printf("Error: unable to parse repository name %s.\n", entry)
 			os.Exit(1)
 		}
-		if v.Fork  {
-		// get the latest build for the specified repository
-		build, err := client.BuildLast(owner, name, branch)
-		if err != nil {
-			fmt.Printf("Error: unable to get latest build for %s.\n", entry)
-			os.Exit(1)
-		}
-		// start a new  build
-		_, err = client.BuildFork(owner, name, build.Number)
-		if err != nil {
-			fmt.Printf("Error: unable to trigger a new build for %s.\n", entry)
-			os.Exit(1)
-		}
+		if v.Fork {
+			// get the latest build for the specified repository
+			build, err := client.BuildLast(owner, name, branch)
+			if err != nil {
+				fmt.Printf("Error: unable to get latest build for %s.\n", entry)
+				os.Exit(1)
+			}
+			// start a new  build
+			_, err = client.BuildFork(owner, name, build.Number)
+			if err != nil {
+				fmt.Printf("Error: unable to trigger a new build for %s.\n", entry)
+				os.Exit(1)
+			}
 		} else {
-		// get the latest build for the specified repository
-		build, err := client.BuildLast(owner, name, branch)
-		if err != nil {
-			fmt.Printf("Error: unable to get latest build for %s.\n", entry)
-			os.Exit(1)
-		}
-	
-		// rebuild the latest build
-		_, err = client.BuildStart(owner, name, build.Number)
-		if err != nil {
-			fmt.Printf("Error: unable to trigger build for %s.\n", entry)
-			os.Exit(1)
-		}
+			// get the latest build for the specified repository
+			build, err := client.BuildLast(owner, name, branch)
+			if err != nil {
+				fmt.Printf("Error: unable to get latest build for %s.\n", entry)
+				os.Exit(1)
+			}
 
-		fmt.Printf("Restarting build %d for %s\n", build.Number, entry)
+			// rebuild the latest build
+			_, err = client.BuildStart(owner, name, build.Number)
+			if err != nil {
+				fmt.Printf("Error: unable to trigger build for %s.\n", entry)
+				os.Exit(1)
+			}
+
+			fmt.Printf("Restarting build %d for %s\n", build.Number, entry)
 		}
 	}
 }
