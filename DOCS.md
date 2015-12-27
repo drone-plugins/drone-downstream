@@ -30,6 +30,18 @@ notify:
 
 Please be sure to include the `when` section in your `.drone.yml` to avoid triggering builds for pull requests, tags and failed builds.
 
-## Caveats
+You can also trigger a new build for a repository using `fork: true` :
 
-This plugin triggers the lastest build for a repository. It will not create a new build. This behavior may change in future versions of the plugin.
+```yaml
+notify:
+  downstream:
+    repositories:
+      - octocat/Hello-World
+      - octocat/Spoon-Knife
+    token: e3b0c44298fc1c149afbf4
+    fork: true
+    when:
+      event: push
+      branch: master
+      success: true
+```
