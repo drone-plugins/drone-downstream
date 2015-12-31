@@ -13,6 +13,7 @@ import (
 // configure and customzie the git clone behavior.
 type Params struct {
 	Repos []string `json:"repositories"`
+	Server string `json:"server"`
 	Token string   `json:"token"`
 	Fork  bool     `json:"fork"`
 }
@@ -31,8 +32,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	if v.Server == "" {
+		v.Server = s.Link
+	}
+
+
 	// create the drone client
-	client := drone.NewClientToken(s.Link, v.Token)
+	client := drone.NewClientToken(v.Server, v.Token)
 
 	for _, entry := range v.Repos {
 
