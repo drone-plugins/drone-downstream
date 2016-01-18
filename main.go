@@ -12,13 +12,19 @@ import (
 // Params stores the git clone parameters used to
 // configure and customzie the git clone behavior.
 type Params struct {
-	Repos []string `json:"repositories"`
-	Server string `json:"server"`
-	Token string   `json:"token"`
-	Fork  bool     `json:"fork"`
+	Repos  []string `json:"repositories"`
+	Server string   `json:"server"`
+	Token  string   `json:"token"`
+	Fork   bool     `json:"fork"`
 }
 
+var (
+	buildDate string
+)
+
 func main() {
+	fmt.Printf("Drone Downstream Plugin built at %s\n", buildDate)
+
 	v := new(Params)
 	s := new(drone.System)
 	plugin.Param("system", s)
@@ -35,7 +41,6 @@ func main() {
 	if v.Server == "" {
 		v.Server = s.Link
 	}
-
 
 	// create the drone client
 	client := drone.NewClientToken(v.Server, v.Token)
