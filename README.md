@@ -1,4 +1,4 @@
-## Overview
+## drone-downstream
 
 [![Build Status](http://beta.drone.io/api/badges/drone-plugins/drone-downstream/status.svg)](http://beta.drone.io/drone-plugins/drone-downstream)
 [![Coverage Status](https://aircover.co/badges/drone-plugins/drone-downstream/coverage.svg)](https://aircover.co/drone-plugins/drone-downstream)
