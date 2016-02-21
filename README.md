@@ -4,7 +4,7 @@
 [![Coverage Status](https://aircover.co/badges/drone-plugins/drone-downstream/coverage.svg)](https://aircover.co/drone-plugins/drone-downstream)
 [![](https://badge.imagelayers.io/plugins/drone-downstream:latest.svg)](https://imagelayers.io/?images=plugins/drone-downstream:latest 'Get your own badge on imagelayers.io')
 
-Drone plugin to trigger downstream repository builds
+Drone plugin to trigger downstream repository builds. For the usage information and a listing of the available options please take a look at [the docs](DOCS.md).
 
 ## Binary
 
