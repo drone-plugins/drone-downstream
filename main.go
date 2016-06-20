@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"os"
 	"strings"
@@ -12,10 +13,11 @@ import (
 // Params stores the git clone parameters used to
 // configure and customzie the git clone behavior.
 type Params struct {
-	Repos  []string `json:"repositories"`
-	Server string   `json:"server"`
-	Token  string   `json:"token"`
-	Fork   bool     `json:"fork"`
+	Repos            []string `json:"repositories"`
+	Server           string   `json:"server"`
+	Token            string   `json:"token"`
+	Fork             bool     `json:"fork"`
+	DisableSslVerify bool     `json:"disable_ssl_verify"`
 }
 
 var (
@@ -44,6 +46,10 @@ func main() {
 
 	// create the drone client
 	client := drone.NewClientToken(v.Server, v.Token)
+	if v.DisableSslVerify {
+		tlsConfig := &tls.Config{InsecureSkipVerify: true}
+		client = drone.NewClientTokenTLS(v.Server, v.Token, tlsConfig)
+	}
 
 	for _, entry := range v.Repos {
 
