@@ -2,6 +2,7 @@ Use this plugin to trigger builds for a list of downstream repositories. This is
 
 * `repositories` - list of repositories to trigger
 * `token` - drone API token from your user setttings
+* `disable_ssl_verify` - (default: `false`) Allows you to disable ssl verification for when your Drone server is fronted by an internally signed certificate
 
 The following is a sample configuration in your .drone.yml file:
 
