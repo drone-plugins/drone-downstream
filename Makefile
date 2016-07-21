@@ -7,13 +7,10 @@ COMMIT ?= $(shell git rev-parse --short HEAD)
 LDFLAGS = -X "main.buildCommit=$(COMMIT)"
 PACKAGES = $(shell go list ./... | grep -v /vendor/)
 
-all: deps build test
+all: build test
 
 clean:
 	go clean -i ./...
-
-deps:
-	go get -t ./...
 
 fmt:
 	go fmt $(PACKAGES)
