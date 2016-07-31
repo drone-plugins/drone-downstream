@@ -23,11 +23,9 @@ echo 1>&2 $pkgdir
 base=$(echo $pkgdir | sed "s,/$PKG\$,,")
 echo 1>&2 "base: $base"
 cd $base
-
-# Run protoc once per package.
-for dir in $(find $PKG/internal -name '*.proto' | xargs dirname | sort | uniq); do
-	echo 1>&2 "* $dir"
-	protoc --go_out=. $dir/*.proto
+for f in $(find $PKG/internal -name '*.proto'); do
+	echo 1>&2 "* $f"
+	protoc --go_out=. $f
 done
 
 for f in $(find $PKG/internal -name '*.pb.go'); do
