@@ -231,7 +231,7 @@ func fromContext(ctx netcontext.Context) *context {
 func withContext(parent netcontext.Context, c *context) netcontext.Context {
 	ctx := netcontext.WithValue(parent, &contextKey, c)
 	if ns := c.req.Header.Get(curNamespaceHeader); ns != "" {
-		ctx = withNamespace(ctx, ns)
+		ctx = WithNamespace(ctx, ns)
 	}
 	return ctx
 }
@@ -432,21 +432,8 @@ func (c *context) post(body []byte, timeout time.Duration) (b []byte, err error)
 }
 
 func Call(ctx netcontext.Context, service, method string, in, out proto.Message) error {
-	if ns := NamespaceFromContext(ctx); ns != "" {
-		if fn, ok := NamespaceMods[service]; ok {
-			fn(in, ns)
-		}
-	}
-
 	if f, ctx, ok := callOverrideFromContext(ctx); ok {
 		return f(ctx, service, method, in, out)
-	}
-
-	// Handle already-done contexts quickly.
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
 	}
 
 	c := fromContext(ctx)

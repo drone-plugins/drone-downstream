@@ -24,7 +24,7 @@ const (
 
 var (
 	metadataRequestHeaders = http.Header{
-		"Metadata-Flavor": []string{"Google"},
+		"X-Google-Metadata-Request": []string{"True"},
 	}
 )
 
