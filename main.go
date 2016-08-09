@@ -20,22 +20,22 @@ func main() {
 
 		cli.StringSliceFlag{
 			Name:   "repositories",
-			Usage:  "list of repositories to trigger",
+			Usage:  "List of repositories to trigger",
 			EnvVar: "PLUGIN_REPOSITORIES",
 		},
 		cli.StringFlag{
 			Name:   "server",
-			Usage:  "trigger a drone build on a custom server",
+			Usage:  "Trigger a drone build on a custom server",
 			EnvVar: "PLUGIN_SERVER",
 		},
 		cli.StringFlag{
 			Name:   "token",
-			Usage:  "drone API token from your user setttings",
-			EnvVar: "DOWNSTREAM_TOKEN",
+			Usage:  "Drone API token from your user settings",
+			EnvVar: "DOWNSTREAM_TOKEN,PLUGIN_TOKEN",
 		},
 		cli.BoolFlag{
 			Name:   "fork",
-			Usage:  "trigger a new build for a repository",
+			Usage:  "Trigger a new build for a repository",
 			EnvVar: "PLUGIN_FORK",
 		},
 	}
