@@ -1,107 +1,49 @@
-## drone-downstream
+# drone-downstream
 
 [![Build Status](http://beta.drone.io/api/badges/drone-plugins/drone-downstream/status.svg)](http://beta.drone.io/drone-plugins/drone-downstream)
-[![Coverage Status](https://aircover.co/badges/drone-plugins/drone-downstream/coverage.svg)](https://aircover.co/drone-plugins/drone-downstream)
-[![](https://badge.imagelayers.io/plugins/drone-downstream:latest.svg)](https://imagelayers.io/?images=plugins/drone-downstream:latest 'Get your own badge on imagelayers.io')
+[![Go Doc](https://godoc.org/github.com/drone-plugins/drone-downstream?status.svg)](http://godoc.org/github.com/drone-plugins/drone-downstream)
+[![Go Report](https://goreportcard.com/badge/github.com/drone-plugins/drone-downstream)](https://goreportcard.com/report/github.com/drone-plugins/drone-downstream)
+[![Join the chat at https://gitter.im/drone/drone](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/drone/drone)
 
-Drone plugin to trigger downstream repository builds. For the usage information and a listing of the available options please take a look at [the docs](DOCS.md).
+Drone plugin to trigger downstream repository builds. For the usage information
+and a listing of the available options please take a look at
+[the docs](DOCS.md).
 
-## Binary
+## Build
 
-Build the binary using `make`:
+Build the binary with the following commands:
 
 ```
-make deps build
-```
-
-### Example
-
-```sh
-./drone-anynines <<EOF
-{
-    "repo": {
-        "clone_url": "git://github.com/drone/drone",
-        "owner": "drone",
-        "name": "drone",
-        "full_name": "drone/drone"
-    },
-    "system": {
-        "link_url": "https://beta.drone.io"
-    },
-    "build": {
-        "number": 22,
-        "status": "success",
-        "started_at": 1421029603,
-        "finished_at": 1421029813,
-        "message": "Update the Readme",
-        "author": "johnsmith",
-        "author_email": "john.smith@gmail.com"
-        "event": "push",
-        "branch": "master",
-        "commit": "436b7a6e2abaddfd35740527353e78a227ddcb2c",
-        "ref": "refs/heads/master"
-    },
-    "workspace": {
-        "root": "/drone/src",
-        "path": "/drone/src/github.com/drone/drone"
-    },
-    "vargs": {
-        "repositories": [
-            "octocat/Hello-World",
-            "octocat/Spoon-Knife"
-        ],
-        "token": "eyJhbFciHiJISzI1EiIsUnR5cCW6IkpXQCJ9.ezH0ZXh0LjoidGJvZXJnZXIiLCJ0eXBlIjoidXNlciJ9.1m_3QFA6eA7h4wrBby2aIRFAEhQWPrlj4dsO_Gfchtc"
-    }
-}
-EOF
+go build
+go test
 ```
 
 ## Docker
 
-Build the container using `make`:
+Build the docker image with the following commands:
 
 ```
-make deps docker
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -tags netgo
+docker build --rm=true -t plugins/downstream .
 ```
 
-### Example
+Please note incorrectly building the image for the correct x64 linux and with
+GCO disabled will result in an error when running the Docker image:
+
+```
+docker: Error response from daemon: Container command
+'/bin/drone-downstream' not found or does not exist..
+```
+
+## Usage
+
+Execute from the working directory:
 
 ```sh
-docker run -i plugins/drone-anynines <<EOF
-{
-    "repo": {
-        "clone_url": "git://github.com/drone/drone",
-        "owner": "drone",
-        "name": "drone",
-        "full_name": "drone/drone"
-    },
-    "system": {
-        "link_url": "https://beta.drone.io"
-    },
-    "build": {
-        "number": 22,
-        "status": "success",
-        "started_at": 1421029603,
-        "finished_at": 1421029813,
-        "message": "Update the Readme",
-        "author": "johnsmith",
-        "author_email": "john.smith@gmail.com"
-        "event": "push",
-        "branch": "master",
-        "commit": "436b7a6e2abaddfd35740527353e78a227ddcb2c",
-        "ref": "refs/heads/master"
-    },
-    "workspace": {
-        "root": "/drone/src",
-        "path": "/drone/src/github.com/drone/drone"
-    },
-    "vargs": {
-        "repositories": [
-            "octocat/Hello-World",
-            "octocat/Spoon-Knife"
-        ],
-        "token": "eyJhbFciHiJISzI1EiIsUnR5cCW6IkpXQCJ9.ezH0ZXh0LjoidGJvZXJnZXIiLCJ0eXBlIjoidXNlciJ9.1m_3QFA6eA7h4wrBby2aIRFAEhQWPrlj4dsO_Gfchtc"
-    }
-}
-EOF
+docker run --rm \
+  -e PLUGIN_REPOSITORIES=octocat/Hello-World \
+  -e PLUGIN_TOKEN=eyJhbFciHiJISzI1EiIsUnR5cCW6IkpXQCJ9.ezH0ZXh0LjoidGJvZXJnZXIiLCJ0eXBlIjoidXNlciJ9.1m_3QFA6eA7h4wrBby2aIRFAEhQWPrlj4dsO_Gfchtc \
+  -v $(pwd)/$(pwd) \
+  -w $(pwd) \
+  plugins/downstream
 ```
