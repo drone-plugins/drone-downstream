@@ -1,23 +1,22 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
-	_ "github.com/joho/godotenv/autoload"
+	"github.com/Sirupsen/logrus"
 	"github.com/urfave/cli"
+	"github.com/joho/godotenv"
 )
 
 var version string // build number set at compile-time
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "Drone downstream plugin"
-	app.Usage = "drone downstream plugin"
+	app.Name = "downstream plugin"
+	app.Usage = "downstream plugin"
 	app.Action = run
 	app.Version = version
 	app.Flags = []cli.Flag{
-
 		cli.StringSliceFlag{
 			Name:   "repositories",
 			Usage:  "List of repositories to trigger",
@@ -38,12 +37,21 @@ func main() {
 			Usage:  "Trigger a new build for a repository",
 			EnvVar: "PLUGIN_FORK",
 		},
+		cli.StringFlag{
+			Name:  "env-file",
+			Usage: "source env file",
+		},
 	}
 
-	app.Run(os.Args)
+	if err := app.Run(os.Args); err != nil {
+		logrus.Fatal(err)
+	}
 }
 
 func run(c *cli.Context) error {
+	if c.String("env-file") != "" {
+		_ = godotenv.Load(c.String("env-file"))
+	}
 
 	plugin := Plugin{
 		Repos:  c.StringSlice("repositories"),
@@ -52,10 +60,5 @@ func run(c *cli.Context) error {
 		Fork:   c.Bool("fork"),
 	}
 
-	if err := plugin.Exec(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	return nil
+	return plugin.Exec()
 }
