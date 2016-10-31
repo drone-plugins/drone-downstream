@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-
+	"time"
 	"github.com/Sirupsen/logrus"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli"
@@ -38,6 +38,17 @@ func main() {
 			Usage:  "Trigger a new build for a repository",
 			EnvVar: "PLUGIN_FORK",
 		},
+		cli.BoolFlag{
+			Name:   "wait",
+			Usage:  "Wait for any currently running builds to finish",
+			EnvVar: "PLUGIN_WAIT",
+		},
+		cli.DurationFlag{
+			Name:   "timeout",
+                        Value:  time.Duration(60)*time.Second,
+			Usage:  "How long to wait on any currently running builds",
+			EnvVar: "PLUGIN_WAIT_TIMEOUT",
+		},
 		cli.StringFlag{
 			Name:  "env-file",
 			Usage: "source env file",
@@ -59,6 +70,8 @@ func run(c *cli.Context) error {
 		Server: c.String("server"),
 		Token:  c.String("token"),
 		Fork:   c.Bool("fork"),
+		Wait:   c.Bool("wait"),
+		Timeout:   c.Duration("timeout"),
 	}
 
 	return plugin.Exec()
