@@ -26,7 +26,7 @@ func (p *Plugin) Exec() error {
 	if len(p.Server) == 0 {
 		return fmt.Errorf("Error: you must provide your Drone server.")
 	}
-	// parses the repository name in owner/name@branch format 
+
 	client := drone.NewClientToken(p.Server, p.Token)
 
 	for _, entry := range p.Repos {
