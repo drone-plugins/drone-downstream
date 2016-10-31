@@ -45,7 +45,7 @@ func main() {
 		},
 		cli.DurationFlag{
 			Name:   "timeout",
-                        Value:  time.Duration(60)*time.Second,
+			Value:  time.Duration(60)*time.Second,
 			Usage:  "How long to wait on any currently running builds",
 			EnvVar: "PLUGIN_WAIT_TIMEOUT",
 		},
