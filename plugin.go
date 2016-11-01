@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/drone/drone-go/drone"
 	"strings"
 	"time"
+
+	"github.com/drone/drone-go/drone"
 )
 
 // Plugin defines the Downstream plugin parameters.
@@ -30,13 +31,15 @@ func (p *Plugin) Exec() error {
 	client := drone.NewClientToken(p.Server, p.Token)
 
 	for _, entry := range p.Repos {
+
+		// parses the repository name in owner/name@branch format
 		owner, name, branch := parseRepoBranch(entry)
 		if len(owner) == 0 || len(name) == 0 {
 			return fmt.Errorf("Error: unable to parse repository name %s.\n", entry)
 		}
 
 		timeout := time.After(p.Timeout)
-		tick := time.Tick(500 * time.Millisecond)
+		tick := time.Tick(1 * time.Second)
 
 		// Keep trying until we're timed out, successful or got an error
 		// Tagged with "I" due to break nested in select
@@ -72,7 +75,7 @@ func (p *Plugin) Exec() error {
 						break I
 					}
 				} else if p.Wait == true {
-					fmt.Printf("Waiting on running build for: " + entry + "\n")
+					fmt.Printf("BuildLast for repository: %s, returned build number: %v with a status of %s. Will retry for %v.\n", entry, build.Number, build.Status, p.Timeout)
 				}
 			}
 		}
