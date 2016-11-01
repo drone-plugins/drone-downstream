@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"time"
 	"github.com/Sirupsen/logrus"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli"
+	"os"
+	"time"
 )
 
 var build = "0" // build number set at compile-time
@@ -45,7 +45,7 @@ func main() {
 		},
 		cli.DurationFlag{
 			Name:   "timeout",
-			Value:  time.Duration(60)*time.Second,
+			Value:  time.Duration(60) * time.Second,
 			Usage:  "How long to wait on any currently running builds",
 			EnvVar: "PLUGIN_WAIT_TIMEOUT",
 		},
@@ -66,12 +66,12 @@ func run(c *cli.Context) error {
 	}
 
 	plugin := Plugin{
-		Repos:  c.StringSlice("repositories"),
-		Server: c.String("server"),
-		Token:  c.String("token"),
-		Fork:   c.Bool("fork"),
-		Wait:   c.Bool("wait"),
-		Timeout:   c.Duration("timeout"),
+		Repos:   c.StringSlice("repositories"),
+		Server:  c.String("server"),
+		Token:   c.String("token"),
+		Fork:    c.Bool("fork"),
+		Wait:    c.Bool("wait"),
+		Timeout: c.Duration("timeout"),
 	}
 
 	return plugin.Exec()

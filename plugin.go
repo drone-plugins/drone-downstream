@@ -2,19 +2,19 @@ package main
 
 import (
 	"fmt"
+	"github.com/drone/drone-go/drone"
 	"strings"
 	"time"
-	"github.com/drone/drone-go/drone"
 )
 
 // Plugin defines the Downstream plugin parameters.
 type Plugin struct {
-	Repos  []string
-	Server string
-	Token  string
-	Fork   bool
-	Wait   bool
-	Timeout  time.Duration
+	Repos   []string
+	Server  string
+	Token   string
+	Fork    bool
+	Wait    bool
+	Timeout time.Duration
 }
 
 // Exec runs the plugin
@@ -30,17 +30,17 @@ func (p *Plugin) Exec() error {
 	client := drone.NewClientToken(p.Server, p.Token)
 
 	for _, entry := range p.Repos {
-	        owner, name, branch := parseRepoBranch(entry)
+		owner, name, branch := parseRepoBranch(entry)
 		if len(owner) == 0 || len(name) == 0 {
 			return fmt.Errorf("Error: unable to parse repository name %s.\n", entry)
 		}
 
 		timeout := time.After(p.Timeout)
 		tick := time.Tick(500 * time.Millisecond)
-	
+
 		// Keep trying until we're timed out, successful or got an error
 		// Tagged with "I" due to break nested in select
-                I:
+	I:
 		for {
 			select {
 			// Got a timeout! fail with a timeout error
@@ -53,15 +53,15 @@ func (p *Plugin) Exec() error {
 				if err != nil {
 					return fmt.Errorf("Error: unable to get latest build for %s.\n", entry)
 				}
-				if (build.Status != drone.StatusRunning || p.Wait == false) {
+				if build.Status != drone.StatusRunning || p.Wait == false {
 					if p.Fork {
-					      	// start a new  build
+						// start a new  build
 						_, err = client.BuildFork(owner, name, build.Number)
 						if err != nil {
 							return fmt.Errorf("Error: unable to trigger a new build for %s.\n", entry)
 						}
 						fmt.Printf("Starting new build %d for %s.\n", build.Number, entry)
-                                                break I;
+						break I
 					} else {
 						// rebuild the latest build
 						_, err = client.BuildStart(owner, name, build.Number)
@@ -69,7 +69,7 @@ func (p *Plugin) Exec() error {
 							return fmt.Errorf("Error: unable to trigger build for %s.\n", entry)
 						}
 						fmt.Printf("Restarting build %d for %s\n", build.Number, entry)
-                                                break I;
+						break I
 					}
 				} else if p.Wait == true {
 					fmt.Printf("Waiting on running build for: " + entry + "\n")
@@ -79,7 +79,7 @@ func (p *Plugin) Exec() error {
 	}
 	return nil
 }
-	
+
 func parseRepoBranch(repo string) (string, string, string) {
 	var (
 		owner  string
@@ -100,4 +100,3 @@ func parseRepoBranch(repo string) (string, string, string) {
 	}
 	return owner, name, branch
 }
-
