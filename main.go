@@ -26,7 +26,7 @@ func main() {
 		cli.StringFlag{
 			Name:   "server",
 			Usage:  "Trigger a drone build on a custom server",
-			EnvVar: "PLUGIN_SERVER",
+			EnvVar: "DOWNSTREAM_SERVER,PLUGIN_SERVER",
 		},
 		cli.StringFlag{
 			Name:   "token",
