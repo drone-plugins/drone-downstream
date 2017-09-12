@@ -32,7 +32,7 @@ func main() {
 		cli.StringFlag{
 			Name:   "token",
 			Usage:  "Drone API token from your user settings",
-			EnvVar: "DOWNSTREAM_TOKEN,PLUGIN_TOKEN",
+			EnvVar: "DRONE_TOKEN,DOWNSTREAM_TOKEN,PLUGIN_TOKEN",
 		},
 		cli.BoolFlag{
 			Name:   "fork",
