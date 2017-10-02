@@ -7,5 +7,5 @@ LABEL org.label-schema.name="Drone Downstream"
 LABEL org.label-schema.vendor="Drone.IO Community"
 LABEL org.label-schema.schema-version="1.0"
 
-ADD release/linux/amd64/drone-downstream /bin/
+ADD release/linux/arm/drone-downstream /bin/
 ENTRYPOINT ["/bin/drone-downstream"]
