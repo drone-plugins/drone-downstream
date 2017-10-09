@@ -6,7 +6,7 @@
 [![Go Report](https://goreportcard.com/badge/github.com/drone-plugins/drone-downstream)](https://goreportcard.com/report/github.com/drone-plugins/drone-downstream)
 [![](https://images.microbadger.com/badges/image/plugins/downstream.svg)](https://microbadger.com/images/plugins/downstream "Get your own image badge on microbadger.com")
 
-Drone plugin to trigger downstream repository builds. For the usage information and a listing of the available options please take a look at [the docs](DOCS.md).
+Drone plugin to trigger downstream repository builds. For the usage information and a listing of the available options please take a look at [the docs](http://plugins.drone.io/drone-plugins/drone-downstream/).
 
 ## Build
 
