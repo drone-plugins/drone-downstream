@@ -56,7 +56,7 @@ func (p *Plugin) Exec() error {
 				if err != nil {
 					return fmt.Errorf("Error: unable to get latest build for %s.\n", entry)
 				}
-				if build.Status != drone.StatusRunning || p.Wait == false {
+				if (build.Status != drone.StatusRunning && build.Status != drone.StatusPending) || p.Wait == false {
 					if p.Fork {
 						// start a new  build
 						_, err = client.BuildFork(owner, name, build.Number)
