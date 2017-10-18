@@ -37,6 +37,7 @@ func (p *Plugin) Exec() error {
 		if len(owner) == 0 || len(name) == 0 {
 			return fmt.Errorf("Error: unable to parse repository name %s.\n", entry)
 		}
+		waiting := false
 
 		timeout := time.After(p.Timeout)
 		tick := time.Tick(1 * time.Second)
@@ -54,6 +55,9 @@ func (p *Plugin) Exec() error {
 				// get the latest build for the specified repository
 				build, err := client.BuildLast(owner, name, branch)
 				if err != nil {
+					if waiting {
+						continue
+					}
 					return fmt.Errorf("Error: unable to get latest build for %s.\n", entry)
 				}
 				if (build.Status != drone.StatusRunning && build.Status != drone.StatusPending) || p.Wait == false {
@@ -61,6 +65,9 @@ func (p *Plugin) Exec() error {
 						// start a new  build
 						_, err = client.BuildFork(owner, name, build.Number)
 						if err != nil {
+							if waiting {
+								continue
+							}
 							return fmt.Errorf("Error: unable to trigger a new build for %s.\n", entry)
 						}
 						fmt.Printf("Starting new build %d for %s.\n", build.Number, entry)
@@ -69,6 +76,9 @@ func (p *Plugin) Exec() error {
 						// rebuild the latest build
 						_, err = client.BuildStart(owner, name, build.Number)
 						if err != nil {
+							if waiting {
+								continue
+							}
 							return fmt.Errorf("Error: unable to trigger build for %s.\n", entry)
 						}
 						fmt.Printf("Restarting build %d for %s\n", build.Number, entry)
@@ -76,6 +86,7 @@ func (p *Plugin) Exec() error {
 					}
 				} else if p.Wait == true {
 					fmt.Printf("BuildLast for repository: %s, returned build number: %v with a status of %s. Will retry for %v.\n", entry, build.Number, build.Status, p.Timeout)
+					waiting = true
 				}
 			}
 		}
