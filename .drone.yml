@@ -59,7 +59,11 @@ pipeline:
     image: plugins/docker:17.05
     pull: true
     repo: plugins/downstream
-    tags: [ latest, 1.0.0, 1.0, 1 ]
+    tags:
+      - latest
+      - 1.0
+      - 1
+      - 1.0.${DRONE_BUILD_NUMBER}
     secrets: [ docker_username, docker_password ]
     dockerfile: Dockerfile
     when:
