@@ -1,0 +1,38 @@
+
+# Gopkg.toml example
+#
+# Refer to https://github.com/golang/dep/blob/master/docs/Gopkg.toml.md
+# for detailed Gopkg.toml documentation.
+#
+# required = ["github.com/user/thing/cmd/thing"]
+# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
+#
+# [[constraint]]
+#   name = "github.com/user/project"
+#   version = "1.0.0"
+#
+# [[constraint]]
+#   name = "github.com/user/project2"
+#   branch = "dev"
+#   source = "github.com/myfork/project2"
+#
+# [[override]]
+#  name = "github.com/x/y"
+#  version = "2.4.0"
+
+
+[[constraint]]
+  name = "github.com/Sirupsen/logrus"
+  revision = "418b41d23a1bf978c06faea5313ba194650ac088"
+
+[[constraint]]
+  name = "github.com/drone/drone-go"
+  revision = "e34150a175e665a5fa94218fc7ab9986a0bd7732"
+
+[[constraint]]
+  name = "github.com/joho/godotenv"
+  revision = "4ed13390c0acd2ff4e371e64d8b97c8954138243"
+
+[[constraint]]
+  name = "github.com/urfave/cli"
+  revision = "d9021faab69f92295ef7061bd39e4a76dcbdef32"
