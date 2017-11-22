@@ -13,6 +13,8 @@ Drone plugin to trigger downstream repository builds. For the usage information 
 Build the binary with the following commands:
 
 ```
+go get -u github.com/golang/dep/cmd/dep
+dep ensure
 go build
 ```
 
@@ -37,3 +39,4 @@ docker run --rm \
   -w $(pwd) \
   plugins/downstream
 ```
+
