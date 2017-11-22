@@ -50,6 +50,11 @@ func main() {
 			Usage:  "How long to wait on any currently running builds",
 			EnvVar: "PLUGIN_WAIT_TIMEOUT",
 		},
+		cli.StringSliceFlag{
+			Name:   "params",
+			Usage:  "List of params (key=value or file paths of params) to pass to triggered builds",
+			EnvVar: "PLUGIN_PARAMS",
+		},
 		cli.StringFlag{
 			Name:  "env-file",
 			Usage: "source env file",
@@ -73,6 +78,7 @@ func run(c *cli.Context) error {
 		Fork:    c.Bool("fork"),
 		Wait:    c.Bool("wait"),
 		Timeout: c.Duration("timeout"),
+		Params:  c.StringSlice("params"),
 	}
 
 	return plugin.Exec()
