@@ -89,8 +89,8 @@ func (p *Plugin) Exec() error {
 						fmt.Printf("Starting new build %d for %s.\n", build.Number, entry)
 						if len(params) > 0 {
 							fmt.Println("  with params:")
-							for _, k := range params {
-								fmt.Printf("  - %s: %s\n", k, params[k])
+							for k, v := range params {
+								fmt.Printf("  - %s: %s\n", k, v)
 							}
 						}
 						break I
@@ -106,8 +106,8 @@ func (p *Plugin) Exec() error {
 						fmt.Printf("Restarting build %d for %s\n", build.Number, entry)
 						if len(params) > 0 {
 							fmt.Println("  with params:")
-							for _, k := range params {
-								fmt.Printf("  - %s: %s\n", k, params[k])
+							for k, v := range params {
+								fmt.Printf("  - %s: %s\n", k, v)
 							}
 						}
 						break I
