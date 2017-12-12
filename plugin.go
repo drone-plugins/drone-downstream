@@ -13,13 +13,14 @@ import (
 
 // Plugin defines the Downstream plugin parameters.
 type Plugin struct {
-	Repos   []string
-	Server  string
-	Token   string
-	Fork    bool
-	Wait    bool
-	Timeout time.Duration
-	Params  []string
+	Repos     []string
+	Server    string
+	Token     string
+	Fork      bool
+	Wait      bool
+	Timeout   time.Duration
+	Params    []string
+	ParamsEnv []string
 }
 
 // Exec runs the plugin
@@ -35,6 +36,15 @@ func (p *Plugin) Exec() error {
 	params, err := parseParams(p.Params)
 	if err != nil {
 		return fmt.Errorf("Error: unable to parse params: %s.\n", err)
+	}
+
+	for _, k := range p.ParamsEnv {
+		v, exists := os.LookupEnv(k)
+		if !exists {
+			return fmt.Errorf("Error: param_from_env %s is not set.\n", k)
+		}
+
+		params[k] = v
 	}
 
 	config := new(oauth2.Config)
@@ -87,12 +97,7 @@ func (p *Plugin) Exec() error {
 							return fmt.Errorf("Error: unable to trigger a new build for %s.\n", entry)
 						}
 						fmt.Printf("Starting new build %d for %s.\n", build.Number, entry)
-						if len(params) > 0 {
-							fmt.Println("  with params:")
-							for k, v := range params {
-								fmt.Printf("  - %s: %s\n", k, v)
-							}
-						}
+						logParams(params, p.ParamsEnv)
 						break I
 					} else {
 						// rebuild the latest build
@@ -104,12 +109,8 @@ func (p *Plugin) Exec() error {
 							return fmt.Errorf("Error: unable to trigger build for %s.\n", entry)
 						}
 						fmt.Printf("Restarting build %d for %s\n", build.Number, entry)
-						if len(params) > 0 {
-							fmt.Println("  with params:")
-							for k, v := range params {
-								fmt.Printf("  - %s: %s\n", k, v)
-							}
-						}
+						logParams(params, p.ParamsEnv)
+
 						break I
 					}
 				} else if p.Wait == true {
@@ -167,4 +168,23 @@ func parseParams(paramList []string) (map[string]string, error) {
 	}
 
 	return params, nil
+}
+
+func logParams(params map[string]string, paramsEnv []string) {
+	if len(params) > 0 {
+		fmt.Println("  with params:")
+		for k, v := range params {
+			fromEnv := false
+			for _, e := range paramsEnv {
+				if k == e {
+					fromEnv = true
+					break
+				}
+			}
+			if fromEnv {
+				v = "[from-environment]"
+			}
+			fmt.Printf("  - %s: %s\n", k, v)
+		}
+	}
 }

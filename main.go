@@ -55,6 +55,11 @@ func main() {
 			Usage:  "List of params (key=value or file paths of params) to pass to triggered builds",
 			EnvVar: "PLUGIN_PARAMS",
 		},
+		cli.StringSliceFlag{
+			Name:   "params-from-env",
+			Usage:  "List of environment variables to pass to triggered builds",
+			EnvVar: "PLUGIN_PARAMS_FROM_ENV",
+		},
 		cli.StringFlag{
 			Name:  "env-file",
 			Usage: "source env file",
@@ -72,13 +77,14 @@ func run(c *cli.Context) error {
 	}
 
 	plugin := Plugin{
-		Repos:   c.StringSlice("repositories"),
-		Server:  c.String("server"),
-		Token:   c.String("token"),
-		Fork:    c.Bool("fork"),
-		Wait:    c.Bool("wait"),
-		Timeout: c.Duration("timeout"),
-		Params:  c.StringSlice("params"),
+		Repos:     c.StringSlice("repositories"),
+		Server:    c.String("server"),
+		Token:     c.String("token"),
+		Fork:      c.Bool("fork"),
+		Wait:      c.Bool("wait"),
+		Timeout:   c.Duration("timeout"),
+		Params:    c.StringSlice("params"),
+		ParamsEnv: c.StringSlice("params-from-env"),
 	}
 
 	return plugin.Exec()
