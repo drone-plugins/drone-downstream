@@ -10,12 +10,13 @@ import (
 
 // Plugin defines the Downstream plugin parameters.
 type Plugin struct {
-	Repos   []string
-	Server  string
-	Token   string
-	Fork    bool
-	Wait    bool
-	Timeout time.Duration
+	Repos          []string
+	Server         string
+	Token          string
+	Fork           bool
+	Wait           bool
+	Timeout        time.Duration
+	LastSuccessful bool
 }
 
 // Exec runs the plugin
@@ -26,6 +27,10 @@ func (p *Plugin) Exec() error {
 
 	if len(p.Server) == 0 {
 		return fmt.Errorf("Error: you must provide your Drone server.")
+	}
+
+	if p.Wait && p.LastSuccessful {
+		return fmt.Errorf("Error: only one of wait and last_successful can be true; choose one")
 	}
 
 	client := drone.NewClientToken(p.Server, p.Token)
@@ -60,7 +65,29 @@ func (p *Plugin) Exec() error {
 					}
 					return fmt.Errorf("Error: unable to get latest build for %s.\n", entry)
 				}
-				if (build.Status != drone.StatusRunning && build.Status != drone.StatusPending) || p.Wait == false {
+				if p.Wait && !waiting && (build.Status == drone.StatusRunning || build.Status == drone.StatusPending) {
+					fmt.Printf("BuildLast for repository: %s, returned build number: %v with a status of %s. Will retry for %v.\n", entry, build.Number, build.Status, p.Timeout)
+					waiting = true
+					continue
+				} else if p.LastSuccessful && build.Status != drone.StatusSuccess {
+					builds, err := client.BuildList(owner, name)
+					if err != nil {
+						return fmt.Errorf("Error: unable to get build list for %s.\n", entry)
+					}
+
+					build = nil
+					for _, b := range builds {
+						if b.Branch == branch && b.Status == drone.StatusSuccess {
+							build = b
+							break
+						}
+					}
+					if build == nil {
+						return fmt.Errorf("Error: unable to get last successful build for %s.\n", entry)
+					}
+				}
+
+				if (build.Status != drone.StatusRunning && build.Status != drone.StatusPending) || !p.Wait {
 					if p.Fork {
 						// start a new  build
 						_, err = client.BuildFork(owner, name, build.Number)
@@ -84,9 +111,6 @@ func (p *Plugin) Exec() error {
 						fmt.Printf("Restarting build %d for %s\n", build.Number, entry)
 						break I
 					}
-				} else if p.Wait == true {
-					fmt.Printf("BuildLast for repository: %s, returned build number: %v with a status of %s. Will retry for %v.\n", entry, build.Number, build.Status, p.Timeout)
-					waiting = true
 				}
 			}
 		}

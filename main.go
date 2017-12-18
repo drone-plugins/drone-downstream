@@ -50,6 +50,11 @@ func main() {
 			Usage:  "How long to wait on any currently running builds",
 			EnvVar: "PLUGIN_WAIT_TIMEOUT",
 		},
+		cli.BoolFlag{
+			Name:   "last-successful",
+			Usage:  "Trigger last successful build",
+			EnvVar: "PLUGIN_LAST_SUCCESSFUL",
+		},
 		cli.StringFlag{
 			Name:  "env-file",
 			Usage: "source env file",
@@ -67,12 +72,13 @@ func run(c *cli.Context) error {
 	}
 
 	plugin := Plugin{
-		Repos:   c.StringSlice("repositories"),
-		Server:  c.String("server"),
-		Token:   c.String("token"),
-		Fork:    c.Bool("fork"),
-		Wait:    c.Bool("wait"),
-		Timeout: c.Duration("timeout"),
+		Repos:          c.StringSlice("repositories"),
+		Server:         c.String("server"),
+		Token:          c.String("token"),
+		Fork:           c.Bool("fork"),
+		Wait:           c.Bool("wait"),
+		Timeout:        c.Duration("timeout"),
+		LastSuccessful: c.Bool("last-successful"),
 	}
 
 	return plugin.Exec()
