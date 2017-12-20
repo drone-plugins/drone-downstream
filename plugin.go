@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -26,6 +27,14 @@ func (p *Plugin) Exec() error {
 
 	if len(p.Server) == 0 {
 		return fmt.Errorf("Error: you must provide your Drone server.")
+	}
+
+	if !p.Fork {
+		fmt.Fprintln(
+			os.Stderr,
+			"Warning: \"fork: false\" will be deprecated in future\n"+
+				"         set \"fork: true\" to disable this warning",
+		)
 	}
 
 	client := drone.NewClientToken(p.Server, p.Token)
