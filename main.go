@@ -54,6 +54,15 @@ func main() {
 			Name:   "last-successful",
 			Usage:  "Trigger last successful build",
 			EnvVar: "PLUGIN_LAST_SUCCESSFUL",
+		cli.StringSliceFlag{
+			Name:   "params",
+			Usage:  "List of params (key=value or file paths of params) to pass to triggered builds",
+			EnvVar: "PLUGIN_PARAMS",
+		},
+		cli.StringSliceFlag{
+			Name:   "params-from-env",
+			Usage:  "List of environment variables to pass to triggered builds",
+			EnvVar: "PLUGIN_PARAMS_FROM_ENV",
 		},
 		cli.StringFlag{
 			Name:  "env-file",
@@ -79,6 +88,8 @@ func run(c *cli.Context) error {
 		Wait:           c.Bool("wait"),
 		Timeout:        c.Duration("timeout"),
 		LastSuccessful: c.Bool("last-successful"),
+		Params:         c.StringSlice("params"),
+		ParamsEnv:      c.StringSlice("params-from-env"),
 	}
 
 	return plugin.Exec()

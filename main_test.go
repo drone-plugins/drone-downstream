@@ -1,6 +1,7 @@
 package main
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -27,6 +28,64 @@ func Test_parseRepoBranch(t *testing.T) {
 		}
 		if branch != test.Branch {
 			t.Errorf("wanted repository branch %s, got %s", test.Branch, branch)
+		}
+	}
+}
+
+func Test_parseParams_invalid(t *testing.T) {
+	out, err := parseParams([]string{"invalid"})
+	if err == nil {
+		t.Errorf("expected error, got %v", out)
+	}
+}
+
+func Test_parseParams(t *testing.T) {
+	var tests = []struct {
+		Input  []string
+		Output map[string]string
+	}{
+		{[]string{}, map[string]string{}},
+		{
+			[]string{"where=far", "who=you"},
+			map[string]string{"where": "far", "who": "you"},
+		},
+		{
+			[]string{"where=very=far"},
+			map[string]string{"where": "very=far"}},
+		{
+			[]string{"test_params.env"},
+			map[string]string{
+				"SOME_VAR": "someval",
+				"FOO":      "BAR",
+				"BAR":      "BAZ",
+				"foo":      "bar",
+				"bar":      "baz",
+			},
+		},
+		{
+			[]string{"test_params.env", "where=far", "who=you"},
+			map[string]string{
+				"SOME_VAR": "someval",
+				"FOO":      "BAR",
+				"BAR":      "BAZ",
+				"foo":      "bar",
+				"bar":      "baz",
+				"where":    "far",
+				"who":      "you",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		out, err := parseParams(test.Input)
+		if err != nil {
+			t.Errorf("unable to parse params: %s", err)
+
+			break
+		}
+
+		if !reflect.DeepEqual(out, test.Output) {
+			t.Errorf("wanted params %+v, got %+v", test.Output, out)
 		}
 	}
 }
