@@ -7,16 +7,20 @@ import (
 	"time"
 
 	"github.com/drone/drone-go/drone"
+	"github.com/joho/godotenv"
+	"golang.org/x/oauth2"
 )
 
 // Plugin defines the Downstream plugin parameters.
 type Plugin struct {
-	Repos   []string
-	Server  string
-	Token   string
-	Fork    bool
-	Wait    bool
-	Timeout time.Duration
+	Repos     []string
+	Server    string
+	Token     string
+	Fork      bool
+	Wait      bool
+	Timeout   time.Duration
+	Params    []string
+	ParamsEnv []string
 }
 
 // Exec runs the plugin
@@ -36,8 +40,29 @@ func (p *Plugin) Exec() error {
 				"         set \"fork: true\" to disable this warning",
 		)
 	}
+  
+	params, err := parseParams(p.Params)
+	if err != nil {
+		return fmt.Errorf("Error: unable to parse params: %s.\n", err)
+	}
 
-	client := drone.NewClientToken(p.Server, p.Token)
+	for _, k := range p.ParamsEnv {
+		v, exists := os.LookupEnv(k)
+		if !exists {
+			return fmt.Errorf("Error: param_from_env %s is not set.\n", k)
+		}
+
+		params[k] = v
+	}
+
+	config := new(oauth2.Config)
+	auth := config.Client(
+		oauth2.NoContext,
+		&oauth2.Token{
+			AccessToken: p.Token,
+		},
+	)
+	client := drone.NewClient(p.Server, auth)
 
 	for _, entry := range p.Repos {
 
@@ -72,7 +97,7 @@ func (p *Plugin) Exec() error {
 				if (build.Status != drone.StatusRunning && build.Status != drone.StatusPending) || p.Wait == false {
 					if p.Fork {
 						// start a new  build
-						_, err = client.BuildFork(owner, name, build.Number)
+						_, err = client.BuildFork(owner, name, build.Number, params)
 						if err != nil {
 							if waiting {
 								continue
@@ -80,10 +105,11 @@ func (p *Plugin) Exec() error {
 							return fmt.Errorf("Error: unable to trigger a new build for %s.\n", entry)
 						}
 						fmt.Printf("Starting new build %d for %s.\n", build.Number, entry)
+						logParams(params, p.ParamsEnv)
 						break I
 					} else {
 						// rebuild the latest build
-						_, err = client.BuildStart(owner, name, build.Number)
+						_, err = client.BuildStart(owner, name, build.Number, params)
 						if err != nil {
 							if waiting {
 								continue
@@ -91,6 +117,8 @@ func (p *Plugin) Exec() error {
 							return fmt.Errorf("Error: unable to trigger build for %s.\n", entry)
 						}
 						fmt.Printf("Restarting build %d for %s\n", build.Number, entry)
+						logParams(params, p.ParamsEnv)
+
 						break I
 					}
 				} else if p.Wait == true {
@@ -122,4 +150,49 @@ func parseRepoBranch(repo string) (string, string, string) {
 		name = parts[1]
 	}
 	return owner, name, branch
+}
+
+func parseParams(paramList []string) (map[string]string, error) {
+	params := make(map[string]string)
+	for _, p := range paramList {
+		parts := strings.SplitN(p, "=", 2)
+		if len(parts) == 2 {
+			params[parts[0]] = parts[1]
+		} else if _, err := os.Stat(parts[0]); os.IsNotExist(err) {
+			return nil, fmt.Errorf(
+				"invalid param '%s'; must be KEY=VALUE or file path",
+				parts[0],
+			)
+		} else {
+			fileParams, err := godotenv.Read(parts[0])
+			if err != nil {
+				return nil, err
+			}
+
+			for k, v := range fileParams {
+				params[k] = v
+			}
+		}
+	}
+
+	return params, nil
+}
+
+func logParams(params map[string]string, paramsEnv []string) {
+	if len(params) > 0 {
+		fmt.Println("  with params:")
+		for k, v := range params {
+			fromEnv := false
+			for _, e := range paramsEnv {
+				if k == e {
+					fromEnv = true
+					break
+				}
+			}
+			if fromEnv {
+				v = "[from-environment]"
+			}
+			fmt.Printf("  - %s: %s\n", k, v)
+		}
+	}
 }
