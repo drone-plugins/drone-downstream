@@ -6,18 +6,20 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/joho/godotenv"
 	"github.com/urfave/cli"
 )
 
-var build = "0" // build number set at compile-time
+var (
+	version = "0.0.0"
+	build   = "0"
+)
 
 func main() {
 	app := cli.NewApp()
 	app.Name = "downstream plugin"
 	app.Usage = "downstream plugin"
+	app.Version = fmt.Sprintf("%s+%s", version, build)
 	app.Action = run
-	app.Version = fmt.Sprintf("1.0.%s", build)
 	app.Flags = []cli.Flag{
 		cli.StringSliceFlag{
 			Name:   "repositories",
@@ -65,10 +67,6 @@ func main() {
 			Usage:  "List of environment variables to pass to triggered builds",
 			EnvVar: "PLUGIN_PARAMS_FROM_ENV",
 		},
-		cli.StringFlag{
-			Name:  "env-file",
-			Usage: "source env file",
-		},
 	}
 
 	if err := app.Run(os.Args); err != nil {
@@ -77,10 +75,6 @@ func main() {
 }
 
 func run(c *cli.Context) error {
-	if c.String("env-file") != "" {
-		_ = godotenv.Load(c.String("env-file"))
-	}
-
 	plugin := Plugin{
 		Repos:          c.StringSlice("repositories"),
 		Server:         c.String("server"),

@@ -8,10 +8,10 @@
   version = "v1.0.5"
 
 [[projects]]
+  branch = "master"
   name = "github.com/drone/drone-go"
   packages = ["drone"]
-  revision = "3a20536622c5e513dea26c58f1e997cb4ab4dbc5"
-  version = "v0.8.4"
+  revision = "7c21c28963a575c08429ca4b72b1d059e64cae9a"
 
 [[projects]]
   name = "github.com/golang/protobuf"
@@ -81,6 +81,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "193bc229fcbc35dcbd76dbee0e89a44a8fa3b7529f9a71f0966a1225b9184d97"
+  inputs-digest = "1e48873e7f3d8c28587a0b21c65bdd9a5592cf0287302255a1d3dbda66686f6a"
   solver-name = "gps-cdcl"
   solver-version = 1
