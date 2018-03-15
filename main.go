@@ -50,6 +50,10 @@ func main() {
 			Usage:  "How long to wait on any currently running builds",
 			EnvVar: "PLUGIN_WAIT_TIMEOUT",
 		},
+		cli.BoolFlag{
+			Name:   "last-successful",
+			Usage:  "Trigger last successful build",
+			EnvVar: "PLUGIN_LAST_SUCCESSFUL",
 		cli.StringSliceFlag{
 			Name:   "params",
 			Usage:  "List of params (key=value or file paths of params) to pass to triggered builds",
@@ -77,14 +81,15 @@ func run(c *cli.Context) error {
 	}
 
 	plugin := Plugin{
-		Repos:     c.StringSlice("repositories"),
-		Server:    c.String("server"),
-		Token:     c.String("token"),
-		Fork:      c.Bool("fork"),
-		Wait:      c.Bool("wait"),
-		Timeout:   c.Duration("timeout"),
-		Params:    c.StringSlice("params"),
-		ParamsEnv: c.StringSlice("params-from-env"),
+		Repos:          c.StringSlice("repositories"),
+		Server:         c.String("server"),
+		Token:          c.String("token"),
+		Fork:           c.Bool("fork"),
+		Wait:           c.Bool("wait"),
+		Timeout:        c.Duration("timeout"),
+		LastSuccessful: c.Bool("last-successful"),
+		Params:         c.StringSlice("params"),
+		ParamsEnv:      c.StringSlice("params-from-env"),
 	}
 
 	return plugin.Exec()

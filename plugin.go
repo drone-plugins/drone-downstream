@@ -13,14 +13,15 @@ import (
 
 // Plugin defines the Downstream plugin parameters.
 type Plugin struct {
-	Repos     []string
-	Server    string
-	Token     string
-	Fork      bool
-	Wait      bool
-	Timeout   time.Duration
-	Params    []string
-	ParamsEnv []string
+	Repos          []string
+	Server         string
+	Token          string
+	Fork           bool
+	Wait           bool
+	Timeout        time.Duration
+	LastSuccessful bool
+	Params         []string
+	ParamsEnv      []string
 }
 
 // Exec runs the plugin
@@ -31,6 +32,10 @@ func (p *Plugin) Exec() error {
 
 	if len(p.Server) == 0 {
 		return fmt.Errorf("Error: you must provide your Drone server.")
+	}
+
+	if p.Wait && p.LastSuccessful {
+		return fmt.Errorf("Error: only one of wait and last_successful can be true; choose one")
 	}
 
 	if !p.Fork {
@@ -94,7 +99,29 @@ func (p *Plugin) Exec() error {
 					}
 					return fmt.Errorf("Error: unable to get latest build for %s.\n", entry)
 				}
-				if (build.Status != drone.StatusRunning && build.Status != drone.StatusPending) || p.Wait == false {
+				if p.Wait && !waiting && (build.Status == drone.StatusRunning || build.Status == drone.StatusPending) {
+					fmt.Printf("BuildLast for repository: %s, returned build number: %v with a status of %s. Will retry for %v.\n", entry, build.Number, build.Status, p.Timeout)
+					waiting = true
+					continue
+				} else if p.LastSuccessful && build.Status != drone.StatusSuccess {
+					builds, err := client.BuildList(owner, name)
+					if err != nil {
+						return fmt.Errorf("Error: unable to get build list for %s.\n", entry)
+					}
+
+					build = nil
+					for _, b := range builds {
+						if b.Branch == branch && b.Status == drone.StatusSuccess {
+							build = b
+							break
+						}
+					}
+					if build == nil {
+						return fmt.Errorf("Error: unable to get last successful build for %s.\n", entry)
+					}
+				}
+
+				if (build.Status != drone.StatusRunning && build.Status != drone.StatusPending) || !p.Wait {
 					if p.Fork {
 						// start a new  build
 						_, err = client.BuildFork(owner, name, build.Number, params)
@@ -121,9 +148,6 @@ func (p *Plugin) Exec() error {
 
 						break I
 					}
-				} else if p.Wait == true {
-					fmt.Printf("BuildLast for repository: %s, returned build number: %v with a status of %s. Will retry for %v.\n", entry, build.Number, build.Status, p.Timeout)
-					waiting = true
 				}
 			}
 		}
