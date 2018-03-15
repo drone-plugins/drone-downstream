@@ -33,6 +33,14 @@ func (p *Plugin) Exec() error {
 		return fmt.Errorf("Error: you must provide your Drone server.")
 	}
 
+	if !p.Fork {
+		fmt.Fprintln(
+			os.Stderr,
+			"Warning: \"fork: false\" will be deprecated in future\n"+
+				"         set \"fork: true\" to disable this warning",
+		)
+	}
+  
 	params, err := parseParams(p.Params)
 	if err != nil {
 		return fmt.Errorf("Error: unable to parse params: %s.\n", err)
