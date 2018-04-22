@@ -45,7 +45,7 @@ func (p *Plugin) Exec() error {
 				"         set \"fork: true\" to disable this warning",
 		)
 	}
-  
+
 	params, err := parseParams(p.Params)
 	if err != nil {
 		return fmt.Errorf("Error: unable to parse params: %s.\n", err)
@@ -61,13 +61,15 @@ func (p *Plugin) Exec() error {
 	}
 
 	config := new(oauth2.Config)
-	auth := config.Client(
+
+	auther := config.Client(
 		oauth2.NoContext,
 		&oauth2.Token{
 			AccessToken: p.Token,
 		},
 	)
-	client := drone.NewClient(p.Server, auth)
+
+	client := drone.NewClient(p.Server, auther)
 
 	for _, entry := range p.Repos {
 
