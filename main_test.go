@@ -12,14 +12,16 @@ func Test_parseRepoBranch(t *testing.T) {
 		Owner  string
 		Name   string
 		Branch string
+		Env    string
 	}{
-		{"octocat/hello-world", "octocat", "hello-world", ""},
-		{"octocat/hello-world@master", "octocat", "hello-world", "master"},
+		{"octocat/hello-world", "octocat", "hello-world", "", ""},
+		{"octocat/hello-world@master", "octocat", "hello-world", "master", ""},
+		{"octocat/hello-world@master@production", "octocat", "hello-world", "master", "production"},
 	}
 
 	for _, test := range tests {
 
-		owner, name, branch := parseRepoBranch(test.Repo)
+		owner, name, branch, env := parseRepoBranch(test.Repo)
 		if owner != test.Owner {
 			t.Errorf("wanted repository owner %s, got %s", test.Owner, owner)
 		}
@@ -28,6 +30,9 @@ func Test_parseRepoBranch(t *testing.T) {
 		}
 		if branch != test.Branch {
 			t.Errorf("wanted repository branch %s, got %s", test.Branch, branch)
+		}
+		if env != test.Env {
+			t.Errorf("wanted deployment event %s, got %s", test.Env, env)
 		}
 	}
 }
