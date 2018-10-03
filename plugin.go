@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -22,6 +23,7 @@ type Plugin struct {
 	LastSuccessful bool
 	Params         []string
 	ParamsEnv      []string
+	Deploy         bool
 }
 
 // Exec runs the plugin
@@ -74,10 +76,26 @@ func (p *Plugin) Exec() error {
 	for _, entry := range p.Repos {
 
 		// parses the repository name in owner/name@branch format
-		owner, name, branch := parseRepoBranch(entry)
+		owner, name, branch, env := parseRepoBranch(entry)
 		if len(owner) == 0 || len(name) == 0 {
 			return fmt.Errorf("Error: unable to parse repository name %s.\n", entry)
 		}
+
+		// check for mandatory build no during deploy trigger
+		if p.Deploy {
+			if branch == "" {
+				return fmt.Errorf("Error: build no must be mentioned for deploy, format repository@build/branch@env")
+			}
+			if env == "" {
+				return fmt.Errorf("Error: environment must be mentioned for deploy, format repository@build/branch@env")
+			}
+			if _, err := strconv.Atoi(branch); err != nil && !p.LastSuccessful {
+				return fmt.Errorf("Error: for deploy build no must be numeric only " +
+					" or for branch deploy last_successful should be true," +
+					" format repository@build/branch@env")
+			}
+		}
+
 		waiting := false
 
 		timeout := time.After(p.Timeout)
@@ -93,6 +111,54 @@ func (p *Plugin) Exec() error {
 				return fmt.Errorf("Error: timed out waiting on a build for %s.\n", entry)
 			// Got a tick, we should check on the build status
 			case <-tick:
+				// first handle the deploy trigger
+				if p.Deploy {
+					build, err := client.BuildLast(owner, name, branch)
+					if p.LastSuccessful {
+						// Get the last successful build of branch
+						builds, err := client.BuildList(owner, name)
+						if err != nil {
+							return fmt.Errorf("Error: unable to get build list for %s", entry)
+						}
+
+						build = nil
+						for _, b := range builds {
+							if b.Branch == branch && b.Status == drone.StatusSuccess {
+								build = b
+								break
+							}
+						}
+						if build == nil {
+							return fmt.Errorf("Error: unable to get last successful build for %s", entry)
+						}
+					} else {
+						// Get build by number
+						buildNumber, _ := strconv.Atoi(branch)
+						build, err = client.Build(owner, name, buildNumber)
+						if err != nil {
+							return fmt.Errorf("Error: unable to get requested build %v for deploy for %s", build.Number, entry)
+						}
+					}
+					if p.Wait && !waiting && (build.Status == drone.StatusRunning || build.Status == drone.StatusPending) {
+						fmt.Printf("BuildLast for repository: %s, returned build number: %v with a status of %s. Will retry for %v.\n", entry, build.Number, build.Status, p.Timeout)
+						waiting = true
+						continue
+					}
+					if (build.Status != drone.StatusRunning && build.Status != drone.StatusPending) || !p.Wait {
+						// start a new deploy
+						_, err = client.Deploy(owner, name, build.Number, env, params)
+						if err != nil {
+							if waiting {
+								continue
+							}
+							return fmt.Errorf("Error: unable to trigger deploy for %s - err %v", entry, err)
+						}
+						fmt.Printf("Starting deploy for %s/%s env - %s build - %d.\n", owner, name, env, build.Number)
+						logParams(params, p.ParamsEnv)
+						break I
+					}
+				}
+
 				// get the latest build for the specified repository
 				build, err := client.BuildLast(owner, name, branch)
 				if err != nil {
@@ -157,15 +223,20 @@ func (p *Plugin) Exec() error {
 	return nil
 }
 
-func parseRepoBranch(repo string) (string, string, string) {
+func parseRepoBranch(repo string) (string, string, string, string) {
 	var (
 		owner  string
 		name   string
 		branch string
+		env    string
 	)
 
 	parts := strings.Split(repo, "@")
 	if len(parts) == 2 {
+		branch = parts[1]
+		repo = parts[0]
+	} else if len(parts) == 3 {
+		env = parts[2]
 		branch = parts[1]
 		repo = parts[0]
 	}
@@ -175,7 +246,7 @@ func parseRepoBranch(repo string) (string, string, string) {
 		owner = parts[0]
 		name = parts[1]
 	}
-	return owner, name, branch
+	return owner, name, branch, env
 }
 
 func parseParams(paramList []string) (map[string]string, error) {

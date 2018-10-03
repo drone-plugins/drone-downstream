@@ -3,8 +3,8 @@
   version = "1.0.5"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/drone/drone-go"
+  revision = "7c21c28"
 
 [[constraint]]
   name = "github.com/joho/godotenv"
