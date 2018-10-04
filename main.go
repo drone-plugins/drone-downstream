@@ -67,9 +67,9 @@ func main() {
 			Usage:  "List of environment variables to pass to triggered builds",
 			EnvVar: "PLUGIN_PARAMS_FROM_ENV",
 		},
-		cli.BoolFlag{
+		cli.StringFlag{
 			Name:   "deploy",
-			Usage:  "Trigger deploy for the respective build",
+			Usage:  "Environment to trigger deploy for the respective build",
 			EnvVar: "PLUGIN_DEPLOY",
 		},
 	}
@@ -90,7 +90,7 @@ func run(c *cli.Context) error {
 		LastSuccessful: c.Bool("last-successful"),
 		Params:         c.StringSlice("params"),
 		ParamsEnv:      c.StringSlice("params-from-env"),
-		Deploy:         c.Bool("deploy"),
+		Deploy:         c.String("deploy"),
 	}
 
 	return plugin.Exec()
