@@ -110,7 +110,7 @@ func (p *Plugin) Exec() error {
 			case <-tick:
 				// first handle the deploy trigger
 				if len(p.Deploy) != 0 {
-					build, err := client.BuildLast(owner, name, branch)
+					build := &drone.Build{}
 					if p.LastSuccessful {
 						// Get the last successful build of branch
 						builds, err := client.BuildList(owner, name)
