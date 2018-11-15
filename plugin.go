@@ -110,7 +110,7 @@ func (p *Plugin) Exec() error {
 			case <-tick:
 				// first handle the deploy trigger
 				if len(p.Deploy) != 0 {
-					build := &drone.Build{}
+					var build *drone.Build
 					if p.LastSuccessful {
 						// Get the last successful build of branch
 						builds, err := client.BuildList(owner, name)
@@ -118,7 +118,6 @@ func (p *Plugin) Exec() error {
 							return fmt.Errorf("Error: unable to get build list for %s", entry)
 						}
 
-						build = nil
 						for _, b := range builds {
 							if b.Branch == branch && b.Status == drone.StatusSuccess {
 								build = b
