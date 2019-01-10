@@ -229,6 +229,12 @@ func parseRepoBranch(repo string) (string, string, string) {
 	parts := strings.Split(repo, "@")
 	if len(parts) == 2 {
 		branch = parts[1]
+		if (strings.HasPrefix(branch, "$")) {
+			b, exists := os.LookupEnv(branch[1:len(branch)])
+			if (exists) {
+				branch = b
+			}
+		}
 		repo = parts[0]
 	}
 
