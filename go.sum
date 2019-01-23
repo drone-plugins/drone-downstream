@@ -2,6 +2,7 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/drone/drone-go v0.0.0-20170826232934-7c21c28963a5 h1:qp4boDYTDjIZ4Az6CAZkfAv+oMLhTYmoM1V9w5VIIE0=
 github.com/drone/drone-go v0.0.0-20170826232934-7c21c28963a5/go.mod h1:qVb1k1w9X5jgoGyLtbnfWNnd4XZfAwokxBmiutbpGqw=
+github.com/drone/drone-go v0.8.4/go.mod h1:qVb1k1w9X5jgoGyLtbnfWNnd4XZfAwokxBmiutbpGqw=
 github.com/golang/protobuf v1.2.0 h1:P3YflyNX/ehuJFLhxviNdFxQPkGK5cDcApsge1SqnvM=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/joho/godotenv v1.3.0 h1:Zjp+RcGpHhGlrMbJzXTrZZPrWj+1vfm90La1wgB6Bhc=

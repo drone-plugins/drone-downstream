@@ -1,7 +1,7 @@
 module github.com/drone-plugins/drone-downstream
 
 require (
-	github.com/drone/drone-go v0.0.0-20170826232934-7c21c28963a5
+	github.com/drone/drone-go v0.8.4
 	github.com/joho/godotenv v1.3.0
 	github.com/sirupsen/logrus v1.3.0
 	github.com/urfave/cli v1.20.0
