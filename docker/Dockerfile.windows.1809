@@ -6,5 +6,5 @@ LABEL maintainer="Drone.IO Community <drone-dev@googlegroups.com>" `
   org.label-schema.vendor="Drone.IO Community" `
   org.label-schema.schema-version="1.0"
 
-ADD release/windows/amd64/drone-downstream.exe c:/bin/drone-downstream.exe
+ADD release/windows/amd64/drone-downstream.exe C:/bin/drone-downstream.exe
 ENTRYPOINT [ "C:\\bin\\drone-downstream.exe" ]
