@@ -156,7 +156,9 @@ func (p *Plugin) Exec() error {
 				}
 
 				// get the latest build for the specified repository
-				build, err := client.BuildLast(owner, name, branch)
+				// Make it compatible with Drone v1.0.0 and save backward compatibility with v0.8.9
+				// TODO: remove this "crutch" after v1.0.0 release
+				build, err := client.BuildLast(owner, name, branch+"&ref=refs/heads/"+branch)
 				if err != nil {
 					if waiting {
 						continue
