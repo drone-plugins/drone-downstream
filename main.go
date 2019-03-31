@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -10,16 +9,15 @@ import (
 )
 
 var (
-	version = "0.0.0"
-	build   = "0"
+	version = "unknown"
 )
 
 func main() {
 	app := cli.NewApp()
 	app.Name = "downstream plugin"
 	app.Usage = "downstream plugin"
-	app.Version = fmt.Sprintf("%s+%s", version, build)
 	app.Action = run
+	app.Version = version
 	app.Flags = []cli.Flag{
 		cli.StringSliceFlag{
 			Name:   "repositories",
