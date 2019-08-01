@@ -35,11 +35,6 @@ func main() {
 			EnvVar: "DRONE_TOKEN,DOWNSTREAM_TOKEN,PLUGIN_TOKEN",
 		},
 		cli.BoolFlag{
-			Name:   "fork",
-			Usage:  "Trigger a new build for a repository",
-			EnvVar: "PLUGIN_FORK",
-		},
-		cli.BoolFlag{
 			Name:   "wait",
 			Usage:  "Wait for any currently running builds to finish",
 			EnvVar: "PLUGIN_WAIT",
@@ -82,7 +77,6 @@ func run(c *cli.Context) error {
 		Repos:          c.StringSlice("repositories"),
 		Server:         c.String("server"),
 		Token:          c.String("token"),
-		Fork:           c.Bool("fork"),
 		Wait:           c.Bool("wait"),
 		Timeout:        c.Duration("timeout"),
 		LastSuccessful: c.Bool("last-successful"),
