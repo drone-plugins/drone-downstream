@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"reflect"
 	"testing"
 )
@@ -86,6 +88,32 @@ func Test_parseParams(t *testing.T) {
 
 		if !reflect.DeepEqual(out, test.Output) {
 			t.Errorf("wanted params %+v, got %+v", test.Output, out)
+		}
+	}
+}
+
+func Test_getServerWithDefaults(t *testing.T) {
+	var tests = []struct {
+		Server string
+		Host   string
+		Proto  string
+		Result string
+	}{
+		{"", "drone.example.com", "http", "http://drone.example.com"},
+		{"", "drone.example.com:8000", "http", "http://drone.example.com:8000"},
+		{"", "drone.example.com", "https", "https://drone.example.com"},
+		{"", "drone.example.com:8888", "https", "https://drone.example.com:8888"},
+		{"https://drone.example.com", "drone.example.com:8888", "https", "https://drone.example.com"},
+	}
+
+	for _, test := range tests {
+
+		os.Setenv("DRONE_SYSTEM_HOST", test.Host)
+		os.Setenv("DRONE_SYSTEM_PROTO", test.Proto)
+		server := getServerWithDefaults(test.Server)
+
+		if server != test.Result {
+			t.Errorf("wanted server url %s, got %s", test.Result, server)
 		}
 	}
 }
