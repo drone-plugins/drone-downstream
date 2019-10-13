@@ -30,6 +30,16 @@ func main() {
 			EnvVar: "DOWNSTREAM_SERVER,PLUGIN_SERVER",
 		},
 		cli.StringFlag{
+			Name:   "host",
+			Usage:  "Host for default value of server flag",
+			EnvVar: "DRONE_SYSTEM_HOST,PLUGIN_HOST",
+		},
+		cli.StringFlag{
+			Name:   "proto",
+			Usage:  "Protocol for default value of server flag",
+			EnvVar: "DRONE_SYSTEM_PROTO,PLUGIN_PROTO",
+		},
+		cli.StringFlag{
 			Name:   "token",
 			Usage:  "Drone API token from your user settings",
 			EnvVar: "DRONE_TOKEN,DOWNSTREAM_TOKEN,PLUGIN_TOKEN",

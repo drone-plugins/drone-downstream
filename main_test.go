@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-
 	"reflect"
 	"testing"
 )
@@ -107,10 +105,7 @@ func Test_getServerWithDefaults(t *testing.T) {
 	}
 
 	for _, test := range tests {
-
-		os.Setenv("DRONE_SYSTEM_HOST", test.Host)
-		os.Setenv("DRONE_SYSTEM_PROTO", test.Proto)
-		server := getServerWithDefaults(test.Server)
+		server := getServerWithDefaults(test.Server, test.Host, test.Proto)
 
 		if server != test.Result {
 			t.Errorf("wanted server url %s, got %s", test.Result, server)

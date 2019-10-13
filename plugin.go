@@ -16,6 +16,8 @@ import (
 type Plugin struct {
 	Repos          []string
 	Server         string
+	Host           string
+	Proto          string
 	Token          string
 	Wait           bool
 	Timeout        time.Duration
@@ -31,7 +33,7 @@ func (p *Plugin) Exec() error {
 		return fmt.Errorf("Error: you must provide your Drone access token.")
 	}
 
-	p.Server = getServerWithDefaults(p.Server)
+	p.Server = getServerWithDefaults(p.Server, p.Host, p.Proto)
 	if len(p.Server) == 0 {
 		return fmt.Errorf("Error: you must provide your Drone server.")
 	}
@@ -263,13 +265,11 @@ func logParams(params map[string]string, paramsEnv []string) {
 	}
 }
 
-func getServerWithDefaults(server string) string {
+func getServerWithDefaults(server string, host string, protocol string) string {
 	if len(server) != 0 {
 		return server
 	}
 
-	host := os.Getenv("DRONE_SYSTEM_HOST")
-	protocol := os.Getenv("DRONE_SYSTEM_PROTO")
 	if len(host) == 0 || len(protocol) == 0 {
 		return ""
 	}
