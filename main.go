@@ -30,12 +30,12 @@ func main() {
 			EnvVar: "DOWNSTREAM_SERVER,PLUGIN_SERVER",
 		},
 		cli.StringFlag{
-			Name:   "host",
+			Name:   "system.host",
 			Usage:  "Host for default value of server flag",
 			EnvVar: "DRONE_SYSTEM_HOST,PLUGIN_HOST",
 		},
 		cli.StringFlag{
-			Name:   "proto",
+			Name:   "system.proto",
 			Usage:  "Protocol for default value of server flag",
 			EnvVar: "DRONE_SYSTEM_PROTO,PLUGIN_PROTO",
 		},
@@ -86,6 +86,8 @@ func run(c *cli.Context) error {
 	plugin := Plugin{
 		Repos:          c.StringSlice("repositories"),
 		Server:         c.String("server"),
+		Host:           c.String("system.host"),
+		Proto:          c.String("system.proto"),
 		Token:          c.String("token"),
 		Wait:           c.Bool("wait"),
 		Timeout:        c.Duration("timeout"),
