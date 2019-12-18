@@ -155,7 +155,7 @@ func (p *Plugin) Exec() error {
 					if waiting {
 						continue
 					}
-					return fmt.Errorf("Error: unable to get latest build for %s.\n", entry)
+					return fmt.Errorf("Error: unable to get latest build for %s: %s.\n", entry, err)
 				}
 				if p.Wait && !waiting && (build.Status == drone.StatusRunning || build.Status == drone.StatusPending) {
 					fmt.Printf("BuildLast for repository: %s, returned build number: %v with a status of %s. Will retry for %v.\n", entry, build.Number, build.Status, p.Timeout)
