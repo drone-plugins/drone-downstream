@@ -22,6 +22,8 @@ type Plugin struct {
 	Wait           bool
 	Timeout        time.Duration
 	LastSuccessful bool
+	Block          bool
+	BlockTimeout   time.Duration
 	Params         []string
 	ParamsEnv      []string
 	Deploy         string
@@ -181,7 +183,7 @@ func (p *Plugin) Exec() error {
 
 				if (build.Status != drone.StatusRunning && build.Status != drone.StatusPending) || !p.Wait {
 					// rebuild the latest build
-					_, err = client.BuildRestart(owner, name, int(build.Number), params)
+					build, err = client.BuildRestart(owner, name, int(build.Number), params)
 					if err != nil {
 						if waiting {
 							continue
@@ -191,6 +193,33 @@ func (p *Plugin) Exec() error {
 					fmt.Printf("Restarting build %d for %s\n", build.Number, entry)
 					logParams(params, p.ParamsEnv)
 
+					if p.Block {
+						fmt.Printf("waiting %v for %s: %d to finish\n", p.BlockTimeout, entry, build.Number)
+						block_timeout := time.After(p.BlockTimeout)
+						block_tick := time.Tick(1 * time.Second)
+						for {
+							select {
+							case <- block_timeout:
+								return fmt.Errorf("Error: timed out waiting for %s: %d to finish.\n", entry, build.Number)
+							case <- block_tick:
+								build, _ = client.Build(owner, name, int(build.Number))
+								if err != nil {
+									return fmt.Errorf("Error: unable to get build status for %s: %d.\n", entry, build.Number)
+								}
+								if build.Status != drone.StatusRunning {
+									goto build_done
+								}
+								continue
+							}
+
+						}
+						build_done:
+						if (build.Status != drone.StatusPassing) {
+							return fmt.Errorf("downstream build failed\n")
+						}
+						// success?
+						return nil
+					}
 					break I
 				}
 			}

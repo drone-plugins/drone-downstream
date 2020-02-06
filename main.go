@@ -60,6 +60,17 @@ func main() {
 			Usage:  "Trigger last successful build",
 			EnvVar: "PLUGIN_LAST_SUCCESSFUL",
 		},
+		cli.BoolFlag{
+			Name:   "block",
+			Usage:  "block on completion of downstream build",
+			EnvVar: "PLUGIN_BLOCK",
+		},
+		cli.DurationFlag{
+			Name:   "block-timeout",
+			Value:  time.Duration(60) * time.Second,
+			Usage:  "How long to wait on blocking downstream build",
+			EnvVar: "PLUGIN_BLOCK_TIMEOUT",
+		},
 		cli.StringSliceFlag{
 			Name:   "params",
 			Usage:  "List of params (key=value or file paths of params) to pass to triggered builds",
@@ -92,6 +103,8 @@ func run(c *cli.Context) error {
 		Wait:           c.Bool("wait"),
 		Timeout:        c.Duration("timeout"),
 		LastSuccessful: c.Bool("last-successful"),
+		Block:		c.Bool("block"),
+		BlockTimeout:	c.Duration("block-timeout"),
 		Params:         c.StringSlice("params"),
 		ParamsEnv:      c.StringSlice("params-from-env"),
 		Deploy:         c.String("deploy"),
