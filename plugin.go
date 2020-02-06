@@ -199,9 +199,9 @@ func (p *Plugin) Exec() error {
 						block_tick := time.Tick(1 * time.Second)
 						for {
 							select {
-							case <- block_timeout:
+							case <-block_timeout:
 								return fmt.Errorf("Error: timed out waiting for %s: %d to finish.\n", entry, build.Number)
-							case <- block_tick:
+							case <-block_tick:
 								build, _ = client.Build(owner, name, int(build.Number))
 								if err != nil {
 									return fmt.Errorf("Error: unable to get build status for %s: %d.\n", entry, build.Number)
@@ -213,8 +213,8 @@ func (p *Plugin) Exec() error {
 							}
 
 						}
-						build_done:
-						if (build.Status != drone.StatusPassing) {
+					build_done:
+						if build.Status != drone.StatusPassing {
 							return fmt.Errorf("downstream build failed\n")
 						}
 						// success?
