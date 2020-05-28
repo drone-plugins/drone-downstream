@@ -6,6 +6,7 @@
 package plugin
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -77,7 +78,7 @@ func (p *Plugin) Execute() error {
 	config := new(oauth2.Config)
 
 	auther := config.Client(
-		oauth2.NoContext,
+		context.WithValue(context.Background(), oauth2.HTTPClient, p.network.Client),
 		&oauth2.Token{
 			AccessToken: p.settings.Token,
 		},
