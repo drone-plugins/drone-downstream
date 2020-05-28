@@ -1,4 +1,9 @@
-package main
+// Copyright (c) 2020, the Drone Plugins project authors.
+// Please see the AUTHORS file for details. All rights reserved.
+// Use of this source code is governed by an Apache 2.0 license that can be
+// found in the LICENSE file.
+
+package plugin
 
 import (
 	"fmt"
@@ -9,12 +14,13 @@ import (
 
 	"github.com/drone/drone-go/drone"
 	"github.com/joho/godotenv"
+	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 )
 
-// Plugin defines the Downstream plugin parameters.
-type Plugin struct {
-	Repos          []string
+// Settings for the plugin.
+type Settings struct {
+	Repos          cli.StringSlice
 	Server         string
 	Host           string
 	Proto          string
@@ -22,52 +28,64 @@ type Plugin struct {
 	Wait           bool
 	Timeout        time.Duration
 	LastSuccessful bool
-	Params         []string
-	ParamsEnv      []string
+	Params         cli.StringSlice
+	ParamsEnv      cli.StringSlice
 	Deploy         string
+
+	server string
+	params map[string]string
 }
 
-// Exec runs the plugin
-func (p *Plugin) Exec() error {
-	if len(p.Token) == 0 {
+// Validate handles the settings validation of the plugin.
+func (p *Plugin) Validate() error {
+	if len(p.settings.Token) == 0 {
 		return fmt.Errorf("Error: you must provide your Drone access token.")
 	}
 
-	p.Server = getServerWithDefaults(p.Server, p.Host, p.Proto)
-	if len(p.Server) == 0 {
+	p.settings.server = getServerWithDefaults(p.settings.Server, p.settings.Host, p.settings.Proto)
+	if len(p.settings.server) == 0 {
+		p.settings.server = getServerWithDefaults("", p.pipeline.System.Host, p.pipeline.System.Proto)
+	}
+	if len(p.settings.server) == 0 {
 		return fmt.Errorf("Error: you must provide your Drone server.")
 	}
 
-	if p.Wait && p.LastSuccessful {
+	if p.settings.Wait && p.settings.LastSuccessful {
 		return fmt.Errorf("Error: only one of wait and last_successful can be true; choose one")
 	}
 
-	params, err := parseParams(p.Params)
+	var err error
+	p.settings.params, err = parseParams(p.settings.Params.Value())
 	if err != nil {
 		return fmt.Errorf("Error: unable to parse params: %s.\n", err)
 	}
 
-	for _, k := range p.ParamsEnv {
+	for _, k := range p.settings.ParamsEnv.Value() {
 		v, exists := os.LookupEnv(k)
 		if !exists {
 			return fmt.Errorf("Error: param_from_env %s is not set.\n", k)
 		}
 
-		params[k] = v
+		p.settings.params[k] = v
 	}
 
+	return nil
+}
+
+// Execute provides the implementation of the plugin.
+func (p *Plugin) Execute() error {
 	config := new(oauth2.Config)
 
 	auther := config.Client(
 		oauth2.NoContext,
 		&oauth2.Token{
-			AccessToken: p.Token,
+			AccessToken: p.settings.Token,
 		},
 	)
 
-	client := drone.NewClient(p.Server, auther)
+	client := drone.NewClient(p.settings.server, auther)
 
-	for _, entry := range p.Repos {
+	for _, entry := range p.settings.Repos.Value() {
 
 		// parses the repository name in owner/name@branch format
 		owner, name, branch := parseRepoBranch(entry)
@@ -76,11 +94,11 @@ func (p *Plugin) Exec() error {
 		}
 
 		// check for mandatory build no during deploy trigger
-		if len(p.Deploy) != 0 {
+		if len(p.settings.Deploy) != 0 {
 			if branch == "" {
 				return fmt.Errorf("Error: build no or branch must be mentioned for deploy, format repository@build/branch")
 			}
-			if _, err := strconv.Atoi(branch); err != nil && !p.LastSuccessful {
+			if _, err := strconv.Atoi(branch); err != nil && !p.settings.LastSuccessful {
 				return fmt.Errorf("Error: for deploy build no must be numeric only " +
 					" or for branch deploy last_successful should be true," +
 					" format repository@build/branch")
@@ -89,8 +107,10 @@ func (p *Plugin) Exec() error {
 
 		waiting := false
 
-		timeout := time.After(p.Timeout)
+		timeout := time.After(p.settings.Timeout)
 		tick := time.Tick(1 * time.Second)
+
+		var err error
 
 		// Keep trying until we're timed out, successful or got an error
 		// Tagged with "I" due to break nested in select
@@ -103,9 +123,9 @@ func (p *Plugin) Exec() error {
 			// Got a tick, we should check on the build status
 			case <-tick:
 				// first handle the deploy trigger
-				if len(p.Deploy) != 0 {
+				if len(p.settings.Deploy) != 0 {
 					var build *drone.Build
-					if p.LastSuccessful {
+					if p.settings.LastSuccessful {
 						// Get the last successful build of branch
 						builds, err := client.BuildList(owner, name, drone.ListOptions{})
 						if err != nil {
@@ -129,22 +149,22 @@ func (p *Plugin) Exec() error {
 							return fmt.Errorf("Error: unable to get requested build %v for deploy for %s", buildNumber, entry)
 						}
 					}
-					if p.Wait && !waiting && (build.Status == drone.StatusRunning || build.Status == drone.StatusPending) {
-						fmt.Printf("BuildLast for repository: %s, returned build number: %v with a status of %s. Will retry for %v.\n", entry, build.Number, build.Status, p.Timeout)
+					if p.settings.Wait && !waiting && (build.Status == drone.StatusRunning || build.Status == drone.StatusPending) {
+						fmt.Printf("BuildLast for repository: %s, returned build number: %v with a status of %s. Will retry for %v.\n", entry, build.Number, build.Status, p.settings.Timeout)
 						waiting = true
 						continue
 					}
-					if (build.Status != drone.StatusRunning && build.Status != drone.StatusPending) || !p.Wait {
+					if (build.Status != drone.StatusRunning && build.Status != drone.StatusPending) || !p.settings.Wait {
 						// start a new deploy
-						_, err = client.Promote(owner, name, int(build.Number), p.Deploy, params)
+						_, err = client.Promote(owner, name, int(build.Number), p.settings.Deploy, p.settings.params)
 						if err != nil {
 							if waiting {
 								continue
 							}
 							return fmt.Errorf("Error: unable to trigger deploy for %s - err %v", entry, err)
 						}
-						fmt.Printf("Starting deploy for %s/%s env - %s build - %d.\n", owner, name, p.Deploy, build.Number)
-						logParams(params, p.ParamsEnv)
+						fmt.Printf("Starting deploy for %s/%s env - %s build - %d.\n", owner, name, p.settings.Deploy, build.Number)
+						logParams(p.settings.params, p.settings.ParamsEnv.Value())
 						break I
 					}
 				}
@@ -157,11 +177,11 @@ func (p *Plugin) Exec() error {
 					}
 					return fmt.Errorf("Error: unable to get latest build for %s: %s.\n", entry, err)
 				}
-				if p.Wait && !waiting && (build.Status == drone.StatusRunning || build.Status == drone.StatusPending) {
-					fmt.Printf("BuildLast for repository: %s, returned build number: %v with a status of %s. Will retry for %v.\n", entry, build.Number, build.Status, p.Timeout)
+				if p.settings.Wait && !waiting && (build.Status == drone.StatusRunning || build.Status == drone.StatusPending) {
+					fmt.Printf("BuildLast for repository: %s, returned build number: %v with a status of %s. Will retry for %v.\n", entry, build.Number, build.Status, p.settings.Timeout)
 					waiting = true
 					continue
-				} else if p.LastSuccessful && build.Status != drone.StatusPassing {
+				} else if p.settings.LastSuccessful && build.Status != drone.StatusPassing {
 					builds, err := client.BuildList(owner, name, drone.ListOptions{})
 					if err != nil {
 						return fmt.Errorf("Error: unable to get build list for %s.\n", entry)
@@ -179,9 +199,9 @@ func (p *Plugin) Exec() error {
 					}
 				}
 
-				if (build.Status != drone.StatusRunning && build.Status != drone.StatusPending) || !p.Wait {
+				if (build.Status != drone.StatusRunning && build.Status != drone.StatusPending) || !p.settings.Wait {
 					// rebuild the latest build
-					_, err = client.BuildRestart(owner, name, int(build.Number), params)
+					_, err = client.BuildRestart(owner, name, int(build.Number), p.settings.params)
 					if err != nil {
 						if waiting {
 							continue
@@ -189,13 +209,14 @@ func (p *Plugin) Exec() error {
 						return fmt.Errorf("Error: unable to trigger build for %s.\n", entry)
 					}
 					fmt.Printf("Restarting build %d for %s\n", build.Number, entry)
-					logParams(params, p.ParamsEnv)
+					logParams(p.settings.params, p.settings.ParamsEnv.Value())
 
 					break I
 				}
 			}
 		}
 	}
+
 	return nil
 }
 

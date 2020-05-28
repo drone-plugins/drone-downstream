@@ -6,4 +6,4 @@ LABEL maintainer="Drone.IO Community <drone-dev@googlegroups.com>" \
   org.label-schema.schema-version="1.0"
 
 ADD release/linux/arm64/drone-downstream /bin/
-ENTRYPOINT ["/bin/drone-downstream"]
+ENTRYPOINT [ "/bin/drone-downstream" ]
