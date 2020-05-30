@@ -23,8 +23,6 @@ import (
 type Settings struct {
 	Repos          cli.StringSlice
 	Server         string
-	Host           string
-	Proto          string
 	Token          string
 	Wait           bool
 	Timeout        time.Duration
@@ -43,10 +41,7 @@ func (p *Plugin) Validate() error {
 		return fmt.Errorf("you must provide your drone access token")
 	}
 
-	p.settings.server = getServerWithDefaults(p.settings.Server, p.settings.Host, p.settings.Proto)
-	if len(p.settings.server) == 0 {
-		p.settings.server = getServerWithDefaults("", p.pipeline.System.Host, p.pipeline.System.Proto)
-	}
+	p.settings.server = getServerWithDefaults(p.settings.Server, p.pipeline.System.Host, p.pipeline.System.Proto)
 	if len(p.settings.server) == 0 {
 		return fmt.Errorf("you must provide your drone server")
 	}

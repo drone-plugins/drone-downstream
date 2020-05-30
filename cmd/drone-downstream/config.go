@@ -23,25 +23,13 @@ func settingsFlags() []cli.Flag {
 		&cli.StringFlag{
 			Name:        "server",
 			Usage:       "Trigger a drone build on a custom server",
-			EnvVars:     []string{"DOWNSTREAM_SERVER", "PLUGIN_SERVER"},
+			EnvVars:     []string{"PLUGIN_SERVER", "DOWNSTREAM_SERVER"},
 			Destination: &settings.Server,
-		},
-		&cli.StringFlag{
-			Name:        "host",
-			Usage:       "Host for default value of server flag",
-			EnvVars:     []string{"PLUGIN_HOST"},
-			Destination: &settings.Host,
-		},
-		&cli.StringFlag{
-			Name:        "proto",
-			Usage:       "Protocol for default value of server flag",
-			EnvVars:     []string{"PLUGIN_PROTO"},
-			Destination: &settings.Proto,
 		},
 		&cli.StringFlag{
 			Name:        "token",
 			Usage:       "Drone API token from your user settings",
-			EnvVars:     []string{"DRONE_TOKEN", "DOWNSTREAM_TOKEN", "PLUGIN_TOKEN"},
+			EnvVars:     []string{"PLUGIN_TOKEN", "DRONE_TOKEN", "DOWNSTREAM_TOKEN"},
 			Destination: &settings.Token,
 		},
 		&cli.BoolFlag{
