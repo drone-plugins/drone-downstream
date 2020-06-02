@@ -27,7 +27,7 @@ func main() {
 	app.Usage = "trigger a downstream drone build"
 	app.Version = version
 	app.Action = run
-	app.Flags = append(settingsFlags(), urfave.Flags()...)
+	app.Flags = append(settingsFlags(&settings), urfave.Flags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		errors.HandleExit(err)

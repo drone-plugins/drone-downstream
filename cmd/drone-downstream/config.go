@@ -8,11 +8,12 @@ package main
 import (
 	"time"
 
+	"github.com/drone-plugins/drone-downstream/plugin"
 	"github.com/urfave/cli/v2"
 )
 
 // settingsFlags has the cli.Flags for the plugin.Settings.
-func settingsFlags() []cli.Flag {
+func settingsFlags(settings *plugin.Settings) []cli.Flag {
 	return []cli.Flag{
 		&cli.StringSliceFlag{
 			Name:        "repositories",
