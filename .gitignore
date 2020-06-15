@@ -1,6 +1,5 @@
 /release/
-/drone-downstream
-/drone-downstream.exe
+/drone-downstream*
 
 coverage.out
 .drone.yml
