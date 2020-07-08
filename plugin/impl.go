@@ -9,8 +9,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/drone/drone-go/drone"
@@ -30,6 +32,8 @@ type Settings struct {
 	Params         cli.StringSlice
 	ParamsEnv      cli.StringSlice
 	Deploy         string
+	Block          bool
+	BlockTimeout   time.Duration
 
 	server string
 	params map[string]string
@@ -153,15 +157,24 @@ func (p *Plugin) Execute() error {
 					}
 					if (build.Status != drone.StatusRunning && build.Status != drone.StatusPending) || !p.settings.Wait {
 						// start a new deploy
-						_, err = client.Promote(owner, name, int(build.Number), p.settings.Deploy, p.settings.params)
+						var newBuild *drone.Build
+						newBuild, err = client.Promote(owner, name, int(build.Number), p.settings.Deploy, p.settings.params)
 						if err != nil {
 							if waiting {
 								continue
 							}
 							return fmt.Errorf("unable to trigger deploy for %s - err %v", entry, err)
 						}
-						fmt.Printf("starting deploy for %s/%s env - %s build - %d", owner, name, p.settings.Deploy, build.Number)
+						fmt.Printf("starting deploy for %s/%s env - %s build - %d\n", owner, name, p.settings.Deploy, build.Number)
 						logParams(p.settings.params, p.settings.ParamsEnv.Value())
+
+						if p.settings.Block {
+							err = blockUntilBuildIsFinished(p, client, owner, name, int(newBuild.Number))
+							if err != nil {
+								return err
+							}
+						}
+
 						break I
 					}
 				}
@@ -198,7 +211,8 @@ func (p *Plugin) Execute() error {
 
 				if (build.Status != drone.StatusRunning && build.Status != drone.StatusPending) || !p.settings.Wait {
 					// rebuild the latest build
-					_, err = client.BuildRestart(owner, name, int(build.Number), p.settings.params)
+					var newBuild *drone.Build
+					newBuild, err = client.BuildRestart(owner, name, int(build.Number), p.settings.params)
 					if err != nil {
 						if waiting {
 							continue
@@ -207,6 +221,13 @@ func (p *Plugin) Execute() error {
 					}
 					fmt.Printf("Restarting build %d for %s\n", build.Number, entry)
 					logParams(p.settings.params, p.settings.ParamsEnv.Value())
+
+					if p.settings.Block {
+						err = blockUntilBuildIsFinished(p, client, owner, name, int(newBuild.Number))
+						if err != nil {
+							return err
+						}
+					}
 
 					break I
 				}
@@ -293,4 +314,58 @@ func getServerWithDefaults(server string, host string, protocol string) string {
 	}
 
 	return fmt.Sprintf("%s://%s", protocol, host)
+}
+
+func blockUntilBuildIsFinished(p *Plugin, client drone.Client, namespace, name string, buildNumber int) error {
+	fmt.Printf("\nblocking until triggered build is finished (canceling this build will cancel the downstream build too)\n")
+
+	timeout := time.After(p.settings.BlockTimeout)
+
+	//lint:ignore SA1015 refactor later
+	tick := time.Tick(10 * time.Second)
+
+	// listen for SIGINT and SIGTERM to cancel downstream build when our build is cancelled
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	defer close(sigs)
+
+	for {
+		select {
+		case <-sigs:
+			err := client.BuildCancel(namespace, name, int(buildNumber))
+			if err != nil {
+				return fmt.Errorf("could not cancel downstream job %d", buildNumber)
+			}
+
+			fmt.Printf("canceled downstream job %d\n", buildNumber)
+
+			return nil
+
+		// Got a timeout! fail with a timeout error
+		case <-timeout:
+			return fmt.Errorf("timed out waiting for %d", buildNumber)
+
+		// Got a tick, we should check on the build status
+		case <-tick:
+			build, err := client.Build(namespace, name, buildNumber)
+			if err != nil {
+				return err
+			}
+
+			s := build.Status
+			if s == drone.StatusError || s == drone.StatusKilled || s == drone.StatusFailing || s == drone.StatusDeclined || s == drone.StatusSkipped {
+				return fmt.Errorf(
+					"build %d did not succeed: %s",
+					buildNumber,
+					s,
+				)
+			}
+
+			if s == drone.StatusPassing {
+				return nil
+			}
+
+			fmt.Printf("Waiting for build %d in status %s\n", buildNumber, s)
+		}
+	}
 }
