@@ -64,6 +64,11 @@ func (p *Plugin) Validate() error {
 		return fmt.Errorf("unable to parse params: %s", err)
 	}
 
+	upstreamBuildNumber, ok := os.LookupEnv("DRONE_BUILD_NUMBER")
+	if ok {
+		p.settings.params["DRONE_UPSTREAM_BUILD_NUMBER"] = upstreamBuildNumber
+	}
+
 	for _, k := range p.settings.ParamsEnv.Value() {
 		v, exists := os.LookupEnv(k)
 		if !exists {
