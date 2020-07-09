@@ -340,14 +340,16 @@ func getServerWithDefaults(server string, host string, protocol string) string {
 }
 
 func blockUntilBuildIsFinished(p *Plugin, client drone.Client, namespace, name string, buildNumber int) error {
-	fmt.Printf("\nblocking until triggered build is finished (canceling this build will cancel the downstream build too)\n")
+	fmt.Printf("\nblocking until triggered build is finished\n")
 
 	timeout := time.After(p.settings.BlockTimeout)
 
 	//lint:ignore SA1015 refactor later
 	tick := time.Tick(10 * time.Second)
 
-	// listen for SIGINT and SIGTERM to cancel downstream build when our build is cancelled
+	// listen for SIGINT and SIGTERM to cancel downstream build when stopping this executable
+	// this does not work in drone because drone uses SIGKILL to terminate its containers
+	// but when running the plugin locally during development, it's very handy
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	defer close(sigs)
