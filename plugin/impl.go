@@ -377,20 +377,18 @@ func blockUntilBuildIsFinished(p *Plugin, client drone.Client, namespace, name s
 				return err
 			}
 
-			s := build.Status
-			if s == drone.StatusError || s == drone.StatusKilled || s == drone.StatusFailing || s == drone.StatusDeclined || s == drone.StatusSkipped {
+			switch build.Status {
+			case drone.StatusError, drone.StatusKilled, drone.StatusFailing, drone.StatusDeclined, drone.StatusSkipped:
 				return fmt.Errorf(
 					"build %d did not succeed: %s",
 					buildNumber,
-					s,
+					build.Status,
 				)
-			}
-
-			if s == drone.StatusPassing {
+			case drone.StatusPassing:
 				return nil
+			default:
+				fmt.Printf("Waiting for build %d in status %s\n", buildNumber, build.Status)
 			}
-
-			fmt.Printf("Waiting for build %d in status %s\n", buildNumber, s)
 		}
 	}
 }
