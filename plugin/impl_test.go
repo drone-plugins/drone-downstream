@@ -6,12 +6,14 @@
 package plugin
 
 import (
-	"reflect"
+	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_parseRepoBranch(t *testing.T) {
-
 	var tests = []struct {
 		Repo   string
 		Owner  string
@@ -23,25 +25,18 @@ func Test_parseRepoBranch(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		owner, name, branch, err := parseRepoBranch(test.Repo)
+		require.NoError(t, err)
 
-		owner, name, branch := parseRepoBranch(test.Repo)
-		if owner != test.Owner {
-			t.Errorf("wanted repository owner %s, got %s", test.Owner, owner)
-		}
-		if name != test.Name {
-			t.Errorf("wanted repository name %s, got %s", test.Name, name)
-		}
-		if branch != test.Branch {
-			t.Errorf("wanted repository branch %s, got %s", test.Branch, branch)
-		}
+		assert.Equal(t, test.Owner, owner)
+		assert.Equal(t, test.Name, name)
+		assert.Equal(t, test.Branch, branch)
 	}
 }
 
 func Test_parseParams_invalid(t *testing.T) {
 	out, err := parseParams([]string{"invalid"})
-	if err == nil {
-		t.Errorf("expected error, got %v", out)
-	}
+	assert.Error(t, err, fmt.Sprintf("Expected error, got %v", out))
 }
 
 func Test_parseParams(t *testing.T) {
@@ -83,15 +78,9 @@ func Test_parseParams(t *testing.T) {
 
 	for _, test := range tests {
 		out, err := parseParams(test.Input)
-		if err != nil {
-			t.Errorf("unable to parse params: %s", err)
+		require.NoError(t, err)
 
-			break
-		}
-
-		if !reflect.DeepEqual(out, test.Output) {
-			t.Errorf("wanted params %+v, got %+v", test.Output, out)
-		}
+		assert.Equal(t, test.Output, out)
 	}
 }
 
@@ -112,8 +101,6 @@ func Test_getServerWithDefaults(t *testing.T) {
 	for _, test := range tests {
 		server := getServerWithDefaults(test.Server, test.Host, test.Proto)
 
-		if server != test.Result {
-			t.Errorf("wanted server url %s, got %s", test.Result, server)
-		}
+		assert.Equal(t, test.Result, server)
 	}
 }
