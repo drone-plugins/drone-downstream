@@ -14,7 +14,6 @@ import (
 )
 
 func Test_parseRepoBranch(t *testing.T) {
-
 	var tests = []struct {
 		Repo   string
 		Owner  string

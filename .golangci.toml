@@ -77,3 +77,7 @@ text = "501"
 [[issues.exclude-rules]]
 linters = ["gosec"]
 text = "404"
+
+[[issues.exclude-rules]]
+linters = ["misspell"]
+text = "auther` is a misspelling of `author"
