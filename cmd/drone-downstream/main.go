@@ -23,7 +23,9 @@ func main() {
 	settings := &plugin.Settings{}
 
 	if _, err := os.Stat("/run/drone/env"); err == nil {
-		godotenv.Overload("/run/drone/env")
+		if err := godotenv.Overload("/run/drone/env"); err != nil {
+			errors.HandleExit(err)
+		}
 	}
 
 	app := &cli.App{
