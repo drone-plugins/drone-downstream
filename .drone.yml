@@ -1,0 +1,129 @@
+---
+kind: pipeline
+type: docker
+name: testing
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: staticcheck
+  image: golang:1.15.2-alpine3.12
+  commands:
+  - go run honnef.co/go/tools/cmd/staticcheck ./...
+  volumes:
+  - name: gopath
+    path: /go
+
+- name: lint
+  image: golangci/golangci-lint:v1.31.0-alpine
+  commands:
+  - golangci-lint run
+  volumes:
+  - name: gopath
+    path: /go
+
+- name: test
+  image: golang:1.15.2-alpine3.12
+  commands:
+  - go test -cover ./...
+  volumes:
+  - name: gopath
+    path: /go
+
+volumes:
+- name: gopath
+  temp: {}
+
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/tags/**
+  - refs/pull/**
+
+---
+kind: pipeline
+type: docker
+name: linux-amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: environment
+  image: golang:1.15.2-alpine3.12
+  commands:
+  - go version
+  - go env
+  environment:
+    CGO_ENABLED: 0
+
+- name: build
+  image: golang:1.15.2-alpine3.12
+  commands:
+  - go build -v -ldflags "-X main.version=" -a -o release/linux/amd64/drone-downstream ./cmd/drone-downstream
+  environment:
+    CGO_ENABLED: 0
+
+- name: executable
+  image: golang:1.15.2-alpine3.12
+  commands:
+  - ./release/linux/amd64/drone-downstream --help
+  depends_on:
+  - build
+
+- name: docker
+  pull: always
+  image: plugins/docker
+  settings:
+    auto_tag: true
+    auto_tag_suffix: linux-amd64
+    dockerfile: docker/Dockerfile.linux.amd64
+    password:
+      from_secret: docker_password
+    repo: grafana/drone-downstream
+    username:
+      from_secret: docker_username
+
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/tags/**
+  - refs/pull/**
+
+depends_on:
+- testing
+
+---
+kind: pipeline
+type: docker
+name: manifest
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: manifest
+  pull: always
+  image: plugins/manifest
+  settings:
+    auto_tag: true
+    ignore_missing: true
+    password:
+      from_secret: docker_password
+    spec: docker/manifest.tmpl
+    username:
+      from_secret: docker_username
+
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/tags/**
+
+depends_on:
+- linux-amd64
+
+...
