@@ -8,14 +8,6 @@ platform:
   arch: amd64
 
 steps:
-- name: staticcheck
-  image: golang:1.15.2-alpine3.12
-  commands:
-  - go run honnef.co/go/tools/cmd/staticcheck ./...
-  volumes:
-  - name: gopath
-    path: /go
-
 - name: lint
   image: golangci/golangci-lint:v1.31.0-alpine
   commands:

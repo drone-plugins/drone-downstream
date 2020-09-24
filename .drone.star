@@ -30,19 +30,6 @@ def testing(ctx):
     },
     'steps': [
       {
-        'name': 'staticcheck',
-        'image': go_image,
-        'commands': [
-          'go run honnef.co/go/tools/cmd/staticcheck ./...',
-        ],
-        'volumes': [
-          {
-            'name': 'gopath',
-            'path': '/go',
-          },
-        ],
-      },
-      {
         'name': 'lint',
         'image': 'golangci/golangci-lint:v1.31.0-alpine',
         'commands': [
