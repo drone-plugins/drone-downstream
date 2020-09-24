@@ -45,6 +45,9 @@ def testing(ctx):
       {
         'name': 'test',
         'image': go_image,
+        'environment': {
+          'CGO_ENABLED': 0,
+        },
         'commands': [
           'go test -cover ./...',
         ],

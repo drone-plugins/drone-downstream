@@ -20,6 +20,8 @@ steps:
   image: golang:1.15.2-alpine3.12
   commands:
   - go test -cover ./...
+  environment:
+    CGO_ENABLED: 0
   volumes:
   - name: gopath
     path: /go
