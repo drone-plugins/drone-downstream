@@ -149,6 +149,9 @@ def linux(ctx, arch):
         'image': 'plugins/docker',
         'pull': 'always',
         'settings': docker,
+        'depends_on': [
+          'executable',
+        ],
       },
     ],
     'depends_on': [],
