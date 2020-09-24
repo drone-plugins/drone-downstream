@@ -1,7 +1,128 @@
 ---
 kind: pipeline
 type: docker
-name: testing
+name: release-testing
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: lint
+  image: golangci/golangci-lint:v1.31.0-alpine
+  commands:
+  - golangci-lint run
+  volumes:
+  - name: gopath
+    path: /go
+
+- name: test
+  image: golang:1.15.2-alpine3.12
+  commands:
+  - go test -cover ./...
+  environment:
+    CGO_ENABLED: 0
+  volumes:
+  - name: gopath
+    path: /go
+
+volumes:
+- name: gopath
+  temp: {}
+
+trigger:
+  ref:
+  - refs/tags/**
+
+---
+kind: pipeline
+type: docker
+name: release-linux-amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: environment
+  image: golang:1.15.2-alpine3.12
+  commands:
+  - go version
+  - go env
+  environment:
+    CGO_ENABLED: 0
+
+- name: build
+  image: golang:1.15.2-alpine3.12
+  commands:
+  - REF=$(echo ${DRONE_COMMIT_REF} | sed 's/refs\/tags\/v//')
+  - go build -v -ldflags "-X main.version=$${REF}" -a -o release/linux/amd64/drone-downstream ./cmd/drone-downstream
+  environment:
+    CGO_ENABLED: 0
+
+- name: executable
+  image: golang:1.15.2-alpine3.12
+  commands:
+  - ./release/linux/amd64/drone-downstream --help
+  depends_on:
+  - build
+
+- name: docker
+  pull: always
+  image: plugins/docker
+  settings:
+    auto_tag: true
+    auto_tag_suffix: linux-amd64
+    dockerfile: docker/Dockerfile.linux.amd64
+    password:
+      from_secret: docker_password
+    repo: grafana/drone-downstream
+    tags: linux-amd64
+    username:
+      from_secret: docker_username
+  depends_on:
+  - executable
+
+trigger:
+  ref:
+  - refs/tags/**
+
+depends_on:
+- release-testing
+
+---
+kind: pipeline
+type: docker
+name: release-manifest
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: manifest
+  pull: always
+  image: plugins/manifest
+  settings:
+    auto_tag: true
+    ignore_missing: true
+    password:
+      from_secret: docker_password
+    spec: docker/manifest.tmpl
+    username:
+      from_secret: docker_username
+
+trigger:
+  ref:
+  - refs/tags/**
+
+depends_on:
+- release-linux-amd64
+
+---
+kind: pipeline
+type: docker
+name: master-testing
 
 platform:
   os: linux
@@ -33,13 +154,11 @@ volumes:
 trigger:
   ref:
   - refs/heads/master
-  - refs/tags/**
-  - refs/pull/**
 
 ---
 kind: pipeline
 type: docker
-name: linux-amd64
+name: master-linux-amd64
 
 platform:
   os: linux
@@ -57,7 +176,8 @@ steps:
 - name: build
   image: golang:1.15.2-alpine3.12
   commands:
-  - go build -v -ldflags "-X main.version=" -a -o release/linux/amd64/drone-downstream ./cmd/drone-downstream
+  - COMMIT=${DRONE_COMMIT:0:8}
+  - go build -v -ldflags "-X main.version=$${COMMIT}" -a -o release/linux/amd64/drone-downstream ./cmd/drone-downstream
   environment:
     CGO_ENABLED: 0
 
@@ -78,6 +198,7 @@ steps:
     password:
       from_secret: docker_password
     repo: grafana/drone-downstream
+    tags: linux-amd64
     username:
       from_secret: docker_username
   depends_on:
@@ -86,16 +207,14 @@ steps:
 trigger:
   ref:
   - refs/heads/master
-  - refs/tags/**
-  - refs/pull/**
 
 depends_on:
-- testing
+- master-testing
 
 ---
 kind: pipeline
 type: docker
-name: manifest
+name: master-manifest
 
 platform:
   os: linux
@@ -117,9 +236,95 @@ steps:
 trigger:
   ref:
   - refs/heads/master
-  - refs/tags/**
 
 depends_on:
-- linux-amd64
+- master-linux-amd64
+
+---
+kind: pipeline
+type: docker
+name: pr-testing
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: lint
+  image: golangci/golangci-lint:v1.31.0-alpine
+  commands:
+  - golangci-lint run
+  volumes:
+  - name: gopath
+    path: /go
+
+- name: test
+  image: golang:1.15.2-alpine3.12
+  commands:
+  - go test -cover ./...
+  environment:
+    CGO_ENABLED: 0
+  volumes:
+  - name: gopath
+    path: /go
+
+volumes:
+- name: gopath
+  temp: {}
+
+trigger:
+  event:
+  - pull_request
+
+---
+kind: pipeline
+type: docker
+name: pr-linux-amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: environment
+  image: golang:1.15.2-alpine3.12
+  commands:
+  - go version
+  - go env
+  environment:
+    CGO_ENABLED: 0
+
+- name: build
+  image: golang:1.15.2-alpine3.12
+  commands:
+  - COMMIT=${DRONE_COMMIT:0:8}
+  - go build -v -ldflags "-X main.version=$${COMMIT}" -a -o release/linux/amd64/drone-downstream ./cmd/drone-downstream
+  environment:
+    CGO_ENABLED: 0
+
+- name: executable
+  image: golang:1.15.2-alpine3.12
+  commands:
+  - ./release/linux/amd64/drone-downstream --help
+  depends_on:
+  - build
+
+- name: docker
+  pull: always
+  image: plugins/docker
+  settings:
+    dockerfile: docker/Dockerfile.linux.amd64
+    dry_run: true
+    repo: grafana/drone-downstream
+    tags: linux-amd64
+  depends_on:
+  - executable
+
+trigger:
+  event:
+  - pull_request
+
+depends_on:
+- pr-testing
 
 ...

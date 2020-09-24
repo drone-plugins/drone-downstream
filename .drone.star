@@ -1,13 +1,16 @@
 go_image = 'golang:1.15.2-alpine3.12'
 
 def main(ctx):
-  before = testing(ctx)
+  return pipelines('release') + pipelines('master') + pipelines('pr')
+
+def pipelines(ver_mode):
+  before = testing(ver_mode)
 
   stages = [
-    linux(ctx, 'amd64'),
+    linux('amd64', ver_mode),
   ]
 
-  after = manifest(ctx)
+  after = manifest(ver_mode)
 
   for b in before:
     for s in stages:
@@ -19,97 +22,97 @@ def main(ctx):
 
   return before + stages + after
 
-def testing(ctx):
-  return [{
-    'kind': 'pipeline',
-    'type': 'docker',
-    'name': 'testing',
-    'platform': {
-      'os': 'linux',
-      'arch': 'amd64',
-    },
-    'steps': [
-      {
-        'name': 'lint',
-        'image': 'golangci/golangci-lint:v1.31.0-alpine',
-        'commands': [
-          'golangci-lint run',
-        ],
-        'volumes': [
-          {
-            'name': 'gopath',
-            'path': '/go',
-          },
-        ],
+def testing(ver_mode):
+  return [
+    {
+      'kind': 'pipeline',
+      'type': 'docker',
+      'name': '{}-testing'.format(ver_mode),
+      'platform': {
+        'os': 'linux',
+        'arch': 'amd64',
       },
-      {
-        'name': 'test',
-        'image': go_image,
-        'environment': {
-          'CGO_ENABLED': 0,
+      'steps': [
+        {
+          'name': 'lint',
+          'image': 'golangci/golangci-lint:v1.31.0-alpine',
+          'commands': [
+            'golangci-lint run',
+          ],
+          'volumes': [
+            {
+              'name': 'gopath',
+              'path': '/go',
+            },
+          ],
         },
-        'commands': [
-          'go test -cover ./...',
-        ],
-        'volumes': [
-          {
-            'name': 'gopath',
-            'path': '/go',
+        {
+          'name': 'test',
+          'image': go_image,
+          'environment': {
+            'CGO_ENABLED': 0,
           },
-        ],
-      },
-    ],
-    'volumes': [
-      {
-        'name': 'gopath',
-        'temp': {},
-      },
-    ],
-    'trigger': {
-      'ref': [
-        'refs/heads/master',
-        'refs/tags/**',
-        'refs/pull/**',
+          'commands': [
+            'go test -cover ./...',
+          ],
+          'volumes': [
+            {
+              'name': 'gopath',
+              'path': '/go',
+            },
+          ],
+        },
       ],
+      'volumes': [
+        {
+          'name': 'gopath',
+          'temp': {},
+        },
+      ],
+      'trigger': get_triggers(ver_mode),
     },
-  }]
+  ]
 
-def linux(ctx, arch):
+def linux(arch, ver_mode):
   docker = {
     'dockerfile': 'docker/Dockerfile.linux.%s' % (arch),
     'repo': 'grafana/drone-downstream',
-    'username': {
-      'from_secret': 'docker_username',
-    },
-    'password': {
-      'from_secret': 'docker_password',
-    },
+    'dry_run': True,
+    'tags': 'linux-{}'.format(arch),
   }
 
-  if ctx.build.event == 'pull_request':
+  if ver_mode in ('master', 'release'):
     docker.update({
-      'dry_run': True,
-      'tags': 'linux-%s' % (arch),
-    })
-  else:
-    docker.update({
+      'username': {
+        'from_secret': 'docker_username',
+      },
+      'password': {
+        'from_secret': 'docker_password',
+      },
       'auto_tag': True,
-      'auto_tag_suffix': 'linux-%s' % (arch),
+      'auto_tag_suffix': 'linux-{}'.format(arch),
+      'dry_run': False,
     })
 
-  if ctx.build.event == 'tag':
+  if ver_mode == 'release':
     build = [
-      'go build -v -ldflags "-X main.version=%s" -a -o release/linux/%s/drone-downstream ./cmd/drone-downstream' % (ctx.build.ref.replace("refs/tags/v", ""), arch),
+      'REF=$(echo ${DRONE_COMMIT_REF} | sed \'s/refs\\/tags\\/v//\')',
+      'go build -v -ldflags "-X main.version=$${{REF}}" -a -o release/linux/{}/drone-downstream ./cmd/drone-downstream'.format(
+        arch
+      ),
     ]
   else:
     build = [
-      'go build -v -ldflags "-X main.version=%s" -a -o release/linux/%s/drone-downstream ./cmd/drone-downstream' % (ctx.build.commit[0:8], arch),
+      'COMMIT=${DRONE_COMMIT:0:8}',
+      'go build -v -ldflags "-X main.version=$${{COMMIT}}" -a -o release/linux/{}/drone-downstream ./cmd/drone-downstream'.format(
+        arch
+      ),
     ]
 
   return {
     'kind': 'pipeline',
     'type': 'docker',
-    'name': 'linux-%s' % (arch),
+    'name': '{}-linux-{}'.format(ver_mode, arch),
     'platform': {
       'os': 'linux',
       'arch': arch,
@@ -155,43 +158,57 @@ def linux(ctx, arch):
       },
     ],
     'depends_on': [],
-    'trigger': {
-      'ref': [
-        'refs/heads/master',
-        'refs/tags/**',
-        'refs/pull/**',
-      ],
-    },
+    'trigger': get_triggers(ver_mode),
   }
 
-def manifest(ctx):
-  return [{
-    'kind': 'pipeline',
-    'type': 'docker',
-    'name': 'manifest',
-    'steps': [
-      {
-        'name': 'manifest',
-        'image': 'plugins/manifest',
-        'pull': 'always',
-        'settings': {
-          'auto_tag': 'true',
-          'username': {
-            'from_secret': 'docker_username',
+def manifest(ver_mode):
+  if ver_mode not in ('master', 'release'):
+    return []
+
+  return [
+    {
+      'kind': 'pipeline',
+      'type': 'docker',
+      'name': '{}-manifest'.format(ver_mode),
+      'steps': [
+        {
+          'name': 'manifest',
+          'image': 'plugins/manifest',
+          'pull': 'always',
+          'settings': {
+            'auto_tag': 'true',
+            'username': {
+              'from_secret': 'docker_username',
+            },
+            'password': {
+              'from_secret': 'docker_password',
+            },
+            'spec': 'docker/manifest.tmpl',
+            'ignore_missing': 'true',
           },
-          'password': {
-            'from_secret': 'docker_password',
-          },
-          'spec': 'docker/manifest.tmpl',
-          'ignore_missing': 'true',
         },
-      },
-    ],
-    'depends_on': [],
-    'trigger': {
+      ],
+      'depends_on': [],
+      'trigger': get_triggers(ver_mode),
+    },
+  ]
+
+def get_triggers(ver_mode):
+  if ver_mode == 'pr':
+    return {
+      'event': ['pull_request',],
+    }
+
+  if ver_mode == 'master':
+    return {
       'ref': [
         'refs/heads/master',
+      ]
+    }
+
+  if ver_mode == 'release':
+    return {
+      'ref': [
         'refs/tags/**',
-      ],
-    },
-  }]
+      ]
+    }
