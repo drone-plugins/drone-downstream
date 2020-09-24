@@ -150,7 +150,7 @@ def linux(ctx, arch):
       },
       {
         'name': 'executable',
-        'image': go_image',
+        'image': go_image,
         'commands': [
           './release/linux/%s/drone-downstream --help' % (arch),
         ],
