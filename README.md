@@ -17,7 +17,7 @@ export GOARCH=amd64
 export CGO_ENABLED=0
 export GO111MODULE=on
 
-CGO_ENABLED=0 go build -v -a -o release/linux/amd64/drone-downstream
+go build -v -a -o release/linux/amd64/drone-downstream ./cmd/drone-downstream
 ```
 
 ## Docker

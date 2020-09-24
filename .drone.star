@@ -1,3 +1,5 @@
+go_image = 'golang:1.15.2-alpine3.12'
+
 def main(ctx):
   before = testing(ctx)
 
@@ -9,7 +11,7 @@ def main(ctx):
     windows(ctx, '1809'),
   ]
 
-  after = manifest(ctx) + gitter(ctx)
+  after = manifest(ctx)
 
   for b in before:
     for s in stages:
@@ -33,8 +35,7 @@ def testing(ctx):
     'steps': [
       {
         'name': 'staticcheck',
-        'image': 'golang:1.14',
-        'pull': 'always',
+        'image': go_image,
         'commands': [
           'go run honnef.co/go/tools/cmd/staticcheck ./...',
         ],
@@ -47,24 +48,9 @@ def testing(ctx):
       },
       {
         'name': 'lint',
-        'image': 'golang:1.14',
-        'pull': 'always',
+        'image': 'golangci/golangci-lint:v1.31.0-alpine',
         'commands': [
-          'go run golang.org/x/lint/golint -set_exit_status ./...',
-        ],
-        'volumes': [
-          {
-            'name': 'gopath',
-            'path': '/go',
-          },
-        ],
-      },
-      {
-        'name': 'vet',
-        'image': 'golang:1.14',
-        'pull': 'always',
-        'commands': [
-          'go vet ./...',
+          'golangci-lint run',
         ],
         'volumes': [
           {
@@ -75,8 +61,7 @@ def testing(ctx):
       },
       {
         'name': 'test',
-        'image': 'golang:1.14',
-        'pull': 'always',
+        'image': go_image,
         'commands': [
           'go test -cover ./...',
         ],
@@ -128,11 +113,11 @@ def linux(ctx, arch):
 
   if ctx.build.event == 'tag':
     build = [
-      'go build -v -ldflags "-X main.version=%s" -a -tags netgo -o release/linux/%s/drone-downstream ./cmd/drone-downstream' % (ctx.build.ref.replace("refs/tags/v", ""), arch),
+      'go build -v -ldflags "-X main.version=%s" -a -o release/linux/%s/drone-downstream ./cmd/drone-downstream' % (ctx.build.ref.replace("refs/tags/v", ""), arch),
     ]
   else:
     build = [
-      'go build -v -ldflags "-X main.version=%s" -a -tags netgo -o release/linux/%s/drone-downstream ./cmd/drone-downstream' % (ctx.build.commit[0:8], arch),
+      'go build -v -ldflags "-X main.version=%s" -a -o release/linux/%s/drone-downstream ./cmd/drone-downstream' % (ctx.build.commit[0:8], arch),
     ]
 
   return {
@@ -146,8 +131,7 @@ def linux(ctx, arch):
     'steps': [
       {
         'name': 'environment',
-        'image': 'golang:1.14',
-        'pull': 'always',
+        'image': go_image,
         'environment': {
           'CGO_ENABLED': '0',
         },
@@ -158,8 +142,7 @@ def linux(ctx, arch):
       },
       {
         'name': 'build',
-        'image': 'golang:1.14',
-        'pull': 'always',
+        'image': go_image,
         'environment': {
           'CGO_ENABLED': '0',
         },
@@ -167,8 +150,7 @@ def linux(ctx, arch):
       },
       {
         'name': 'executable',
-        'image': 'golang:1.14',
-        'pull': 'always',
+        'image': go_image',
         'commands': [
           './release/linux/%s/drone-downstream --help' % (arch),
         ],
@@ -197,24 +179,34 @@ def windows(ctx, version):
 
   if ctx.build.event == 'tag':
     build = [
-      'go build -v -ldflags "-X main.version=%s" -a -tags netgo -o release/windows/amd64/drone-downstream.exe ./cmd/drone-downstream' % (ctx.build.ref.replace("refs/tags/v", "")),
+      'go build -v -ldflags "-X main.version=%s" -a -o release/windows/amd64/drone-downstream.exe ./cmd/drone-downstream' % (ctx.build.ref.replace("refs/tags/v", "")),
     ]
 
-    docker = docker + [
-      'docker build --pull -f docker/Dockerfile.windows.%s -t plugins/downstream:%s-windows-%s-amd64 .' % (version, ctx.build.ref.replace("refs/tags/v", ""), version),
-      'docker run --rm plugins/downstream:%s-windows-%s-amd64 --help' % (ctx.build.ref.replace("refs/tags/v", ""), version),
-      'docker push plugins/downstream:%s-windows-%s-amd64' % (ctx.build.ref.replace("refs/tags/v", ""), version),
-    ]
+    docker.extend([
+      'docker build --pull -f docker/Dockerfile.windows.%s -t grafana/docker-downstream:%s-windows-%s-amd64 .' % (
+        version, ctx.build.ref.replace("refs/tags/v", ""), version
+      ),
+      'docker run --rm grafana/docker-downstream:%s-windows-%s-amd64 --help' % (
+        ctx.build.ref.replace("refs/tags/v", ""), version
+      ),
+      'docker push grafana/docker-downstream:%s-windows-%s-amd64' % (
+        ctx.build.ref.replace("refs/tags/v", ""), version
+      ),
+    ])
   else:
     build = [
-      'go build -v -ldflags "-X main.version=%s" -a -tags netgo -o release/windows/amd64/drone-downstream.exe ./cmd/drone-downstream' % (ctx.build.commit[0:8]),
+      'go build -v -ldflags "-X main.version=%s" -a -o release/windows/amd64/drone-downstream.exe ./cmd/drone-downstream' % (
+        ctx.build.commit[0:8]
+      ),
     ]
 
-    docker = docker + [
-      'docker build --pull -f docker/Dockerfile.windows.%s -t plugins/downstream:windows-%s-amd64 .' % (version, version),
-      'docker run --rm plugins/downstream:windows-%s-amd64 --help' % (version),
-      'docker push plugins/downstream:windows-%s-amd64' % (version),
-    ]
+    docker.extend([
+      'docker build --pull -f docker/Dockerfile.windows.%s -t grafana/docker-downstream:windows-%s-amd64 .' % (
+        version, version
+      ),
+      'docker run --rm grafana/docker-downstream:windows-%s-amd64 --help' % (version),
+      'docker push grafana/docker-downstream:windows-%s-amd64' % (version),
+    ])
 
   return {
     'kind': 'pipeline',
@@ -302,56 +294,12 @@ def manifest(ctx):
           'ignore_missing': 'true',
         },
       },
-      {
-        'name': 'microbadger',
-        'image': 'plugins/webhook',
-        'pull': 'always',
-        'settings': {
-          'urls': {
-            'from_secret': 'microbadger_url',
-          },
-        },
-      },
     ],
     'depends_on': [],
     'trigger': {
       'ref': [
         'refs/heads/master',
         'refs/tags/**',
-      ],
-    },
-  }]
-
-def gitter(ctx):
-  return [{
-    'kind': 'pipeline',
-    'type': 'docker',
-    'name': 'gitter',
-    'clone': {
-      'disable': True,
-    },
-    'steps': [
-      {
-        'name': 'gitter',
-        'image': 'plugins/gitter',
-        'pull': 'always',
-        'settings': {
-          'webhook': {
-            'from_secret': 'gitter_webhook',
-          }
-        },
-      },
-    ],
-    'depends_on': [
-      'manifest',
-    ],
-    'trigger': {
-      'ref': [
-        'refs/heads/master',
-        'refs/tags/**',
-      ],
-      'status': [
-        'failure',
       ],
     },
   }]

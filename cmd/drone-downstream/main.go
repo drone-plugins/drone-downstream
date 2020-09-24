@@ -10,9 +10,9 @@ package main
 import (
 	"os"
 
-	"github.com/drone-plugins/drone-downstream/plugin"
 	"github.com/drone-plugins/drone-plugin-lib/errors"
 	"github.com/drone-plugins/drone-plugin-lib/urfave"
+	"github.com/grafana/drone-downstream/plugin"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 )

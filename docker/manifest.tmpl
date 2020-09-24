@@ -1,4 +1,4 @@
-image: plugins/downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}{{else}}latest{{/if}}
+image: grafana/docker-downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}{{else}}latest{{/if}}
 
 {{#if build.tags}}
 tags:
@@ -8,36 +8,36 @@ tags:
 {{/if}}
 
 manifests:
-  - image: plugins/downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}linux-amd64
+  - image: grafana/docker-downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}linux-amd64
     platform:
       architecture: amd64
       os: linux
-  - image: plugins/downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}linux-arm64
+  - image: grafana/docker-downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}linux-arm64
     platform:
       architecture: arm64
       os: linux
       variant: v8
-  - image: plugins/downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}linux-arm
+  - image: grafana/docker-downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}linux-arm
     platform:
       architecture: arm
       os: linux
       variant: v7
-  - image: plugins/downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}windows-2004-amd64
+  - image: grafana/docker-downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}windows-2004-amd64
     platform:
       architecture: amd64
       os: windows
       version: 2004
-  - image: plugins/downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}windows-1909-amd64
+  - image: grafana/docker-downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}windows-1909-amd64
     platform:
       architecture: amd64
       os: windows
       version: 1909
-  - image: plugins/downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}windows-1903-amd64
+  - image: grafana/docker-downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}windows-1903-amd64
     platform:
       architecture: amd64
       os: windows
       version: 1903
-  - image: plugins/downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}windows-1809-amd64
+  - image: grafana/docker-downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}windows-1809-amd64
     platform:
       architecture: amd64
       os: windows

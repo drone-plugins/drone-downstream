@@ -6,7 +6,7 @@
 package main
 
 import (
-	"github.com/drone-plugins/drone-downstream/plugin"
+	"github.com/grafana/drone-downstream/plugin"
 	"github.com/urfave/cli/v2"
 )
 

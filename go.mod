@@ -1,4 +1,4 @@
-module github.com/drone-plugins/drone-downstream
+module github.com/grafana/drone-downstream
 
 go 1.15
 
