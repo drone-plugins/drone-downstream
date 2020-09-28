@@ -96,6 +96,12 @@ func (p *Plugin) Execute() error {
 
 		fmt.Printf("successfully started Drone build for %s/%s: #%d\n", owner, name, build.ID)
 		logParams(p.settings.params, p.settings.ParamsEnv.Value())
+
+		if p.settings.Block {
+			if err := blockUntilBuildIsFinished(p, client, owner, name, int(build.Number)); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -202,17 +208,15 @@ func blockUntilBuildIsFinished(p *Plugin, client drone.Client, namespace, name s
 		case <-sigs:
 			err := client.BuildCancel(namespace, name, int(buildNumber))
 			if err != nil {
-				return fmt.Errorf("could not cancel downstream job %d", buildNumber)
+				return fmt.Errorf("could not cancel downstream job %d: %w", buildNumber, err)
 			}
 
 			fmt.Printf("canceled downstream job %d\n", buildNumber)
 
 			return nil
-
 		// Got a timeout! fail with a timeout error
 		case <-timeout:
 			return fmt.Errorf("timed out waiting for %d", buildNumber)
-
 		// Got a tick, we should check on the build status
 		case <-tick:
 			build, err := client.Build(namespace, name, buildNumber)
