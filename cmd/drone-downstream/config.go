@@ -33,6 +33,12 @@ func settingsFlags(settings *plugin.Settings) []cli.Flag {
 			EnvVars:     []string{"PLUGIN_TOKEN", "DRONE_TOKEN", "DOWNSTREAM_TOKEN"},
 			Destination: &settings.Token,
 		},
+		&cli.BoolFlag{
+			Name:        "last-successful",
+			Usage:       "Deploy last successful build",
+			EnvVars:     []string{"PLUGIN_LAST_SUCCESSFUL"},
+			Destination: &settings.LastSuccessful,
+		},
 		&cli.StringSliceFlag{
 			Name:        "params",
 			Usage:       "List of params (key=value or file paths of params) to pass to triggered builds",
@@ -45,6 +51,12 @@ func settingsFlags(settings *plugin.Settings) []cli.Flag {
 			EnvVars:     []string{"PLUGIN_PARAMS_FROM_ENV"},
 			Destination: &settings.ParamsEnv,
 		},
+		&cli.StringFlag{
+			Name:        "deploy",
+			Usage:       "Environment to trigger deploy to",
+			EnvVars:     []string{"PLUGIN_DEPLOY"},
+			Destination: &settings.Deploy,
+		},
 		&cli.BoolFlag{
 			Name:        "block",
 			Usage:       "Block until the triggered build is finished, makes this build fail if triggered build fails",
@@ -52,11 +64,11 @@ func settingsFlags(settings *plugin.Settings) []cli.Flag {
 			Destination: &settings.Block,
 		},
 		&cli.DurationFlag{
-			Name:        "blockTimeout",
+			Name:        "timeout",
 			Value:       time.Duration(60) * time.Minute,
 			Usage:       "How long to block until the triggered build is finished",
 			EnvVars:     []string{"PLUGIN_BLOCK_TIMEOUT"},
-			Destination: &settings.BlockTimeout,
+			Destination: &settings.Timeout,
 		},
 	}
 }

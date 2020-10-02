@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -22,13 +23,15 @@ import (
 
 // Settings for the plugin.
 type Settings struct {
-	Repos        cli.StringSlice
-	Server       string
-	Token        string
-	Params       cli.StringSlice
-	ParamsEnv    cli.StringSlice
-	Block        bool
-	BlockTimeout time.Duration
+	Repos          cli.StringSlice
+	Server         string
+	Token          string
+	Params         cli.StringSlice
+	ParamsEnv      cli.StringSlice
+	Deploy         string
+	Block          bool
+	Timeout        time.Duration
+	LastSuccessful bool
 
 	server string
 	params map[string]string
@@ -83,22 +86,12 @@ func (p *Plugin) Execute() error {
 
 	// For each configured repo, on the format <owner>/<name>@<branch>
 	for _, entry := range p.settings.Repos.Value() {
-		// Parse the repository name in owner/name@branch format
-		owner, name, branch, err := parseRepoBranch(entry)
-		if err != nil {
-			return err
-		}
-
-		build, err := client.BuildCreate(owner, name, "", branch, p.settings.params)
-		if err != nil {
-			return fmt.Errorf("failed to create Drone build for %s/%s: %w", owner, name, err)
-		}
-
-		fmt.Printf("successfully started Drone build for %s/%s: #%d\n", owner, name, build.ID)
-		logParams(p.settings.params, p.settings.ParamsEnv.Value())
-
-		if p.settings.Block {
-			if err := blockUntilBuildIsFinished(p, client, owner, name, int(build.Number)); err != nil {
+		if p.settings.Deploy != "" {
+			if err := p.deployBuild(client, entry); err != nil {
+				return err
+			}
+		} else {
+			if err := p.startBuild(client, entry); err != nil {
 				return err
 			}
 		}
@@ -107,6 +100,90 @@ func (p *Plugin) Execute() error {
 	return nil
 }
 
+// deployBuild deploys a build for a certain repo and branch.
+func (p *Plugin) deployBuild(client drone.Client, entry string) error {
+	owner, name, branch, err := parseRepoBranch(entry)
+	if err != nil {
+		return err
+	}
+	if branch == "" {
+		return fmt.Errorf("build no or branch must be mentioned for deploy, format repository@build/branch")
+	}
+
+	var build *drone.Build
+	if p.settings.LastSuccessful {
+		fmt.Printf("getting last successful build of %s\n", entry)
+		builds, err := client.BuildList(owner, name, drone.ListOptions{})
+		if err != nil {
+			return fmt.Errorf("unable to get build list for %s", entry)
+		}
+
+		for _, b := range builds {
+			if b.Source == branch && b.Status == drone.StatusPassing {
+				build = b
+				break
+			}
+		}
+		if build == nil {
+			return fmt.Errorf("unable to get last successful build for %s", entry)
+		}
+	} else {
+		// Get build by number
+		buildNumber, err := strconv.Atoi(branch)
+		if err != nil {
+			return fmt.Errorf("'%s' is on invalid format, must be <owner>/<name>@<build-number>: %s", entry, err)
+		}
+
+		build, err = client.Build(owner, name, buildNumber)
+		if err != nil {
+			return fmt.Errorf("unable to get requested build %d for deploy for %s", buildNumber, entry)
+		}
+	}
+
+	fmt.Printf("deploying Drone build #%d of repo %s/%s\n", build.Number, owner, name)
+	newBuild, err := client.Promote(owner, name, int(build.Number), p.settings.Deploy, p.settings.params)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("successfully deployed build #%d of repo %s/%s\n", newBuild.Number, owner, name)
+	logParams(p.settings.params, p.settings.ParamsEnv.Value())
+
+	if p.settings.Block {
+		if err := p.blockUntilBuildIsFinished(client, owner, name, int(build.Number)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// startBuild starts a new build for a certain repo and optional branch.
+func (p *Plugin) startBuild(client drone.Client, entry string) error {
+	owner, name, branch, err := parseRepoBranch(entry)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("starting Drone build for %s/%s", owner, name)
+	build, err := client.BuildCreate(owner, name, "", branch, p.settings.params)
+	if err != nil {
+		return fmt.Errorf("failed to create Drone build for %s/%s: %w", owner, name, err)
+	}
+
+	fmt.Printf("successfully started Drone build for %s/%s: #%d\n", owner, name, build.ID)
+	logParams(p.settings.params, p.settings.ParamsEnv.Value())
+
+	if p.settings.Block {
+		if err := p.blockUntilBuildIsFinished(client, owner, name, int(build.Number)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// parseRepoBranch parses a repository name in owner/name@branch format.
 func parseRepoBranch(repo string) (string, string, string, error) {
 	parts := strings.Split(repo, "@")
 	var branch string
@@ -188,10 +265,10 @@ func getServerWithDefaults(server string, host string, protocol string) string {
 	return fmt.Sprintf("%s://%s", protocol, host)
 }
 
-func blockUntilBuildIsFinished(p *Plugin, client drone.Client, namespace, name string, buildNumber int) error {
-	fmt.Printf("\nblocking until triggered build is finished\n")
+func (p *Plugin) blockUntilBuildIsFinished(client drone.Client, namespace, name string, buildNumber int) error {
+	fmt.Printf("\nblocking until build is finished\n")
 
-	timeout := time.After(p.settings.BlockTimeout)
+	timeout := time.After(p.settings.Timeout)
 
 	//lint:ignore SA1015 refactor later
 	tick := time.Tick(10 * time.Second)
