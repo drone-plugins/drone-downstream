@@ -34,21 +34,8 @@ func settingsFlags(settings *plugin.Settings) []cli.Flag {
 			Destination: &settings.Token,
 		},
 		&cli.BoolFlag{
-			Name:        "wait",
-			Usage:       "Wait for any currently running builds to finish",
-			EnvVars:     []string{"PLUGIN_WAIT"},
-			Destination: &settings.Wait,
-		},
-		&cli.DurationFlag{
-			Name:        "timeout",
-			Value:       time.Duration(60) * time.Second,
-			Usage:       "How long to wait on any currently running builds",
-			EnvVars:     []string{"PLUGIN_WAIT_TIMEOUT"},
-			Destination: &settings.Timeout,
-		},
-		&cli.BoolFlag{
 			Name:        "last-successful",
-			Usage:       "Trigger last successful build",
+			Usage:       "Deploy last successful build",
 			EnvVars:     []string{"PLUGIN_LAST_SUCCESSFUL"},
 			Destination: &settings.LastSuccessful,
 		},
@@ -66,7 +53,7 @@ func settingsFlags(settings *plugin.Settings) []cli.Flag {
 		},
 		&cli.StringFlag{
 			Name:        "deploy",
-			Usage:       "Environment to trigger deploy for the respective build",
+			Usage:       "Environment to trigger deploy to",
 			EnvVars:     []string{"PLUGIN_DEPLOY"},
 			Destination: &settings.Deploy,
 		},
@@ -77,11 +64,11 @@ func settingsFlags(settings *plugin.Settings) []cli.Flag {
 			Destination: &settings.Block,
 		},
 		&cli.DurationFlag{
-			Name:        "blockTimeout",
+			Name:        "timeout",
 			Value:       time.Duration(60) * time.Minute,
 			Usage:       "How long to block until the triggered build is finished",
 			EnvVars:     []string{"PLUGIN_BLOCK_TIMEOUT"},
-			Destination: &settings.BlockTimeout,
+			Destination: &settings.Timeout,
 		},
 	}
 }
