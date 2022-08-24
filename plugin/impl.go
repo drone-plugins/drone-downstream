@@ -35,6 +35,10 @@ type Settings struct {
 	params map[string]string
 }
 
+var (
+	buildNotFoundErr = fmt.Errorf("build not found")
+)
+
 // Validate handles the settings validation of the plugin.
 func (p *Plugin) Validate() error {
 	if len(p.settings.Token) == 0 {
@@ -66,6 +70,34 @@ func (p *Plugin) Validate() error {
 	}
 
 	return nil
+}
+
+func findFirstBuild(client drone.Client, owner, name string, cond func(*drone.Build) bool) (*drone.Build, error) {
+	const pageSize = 50
+
+	for page := 0; ; page++ {
+
+		builds, err := client.BuildList(owner, name, drone.ListOptions{
+			Page: page,
+			Size: pageSize,
+		})
+
+		if err != nil {
+			return nil, fmt.Errorf("unable to get build list: %w", err)
+		}
+
+		for _, b := range builds {
+			if cond(b) {
+				return b, nil
+			}
+		}
+
+		if len(builds) < pageSize {
+			// we received less items than asked, it means there are no more builds
+			break
+		}
+	}
+	return nil, buildNotFoundErr
 }
 
 // Execute provides the implementation of the plugin.
@@ -124,19 +156,12 @@ func (p *Plugin) Execute() error {
 					var build *drone.Build
 					if p.settings.LastSuccessful {
 						// Get the last successful build of branch
-						builds, err := client.BuildList(owner, name, drone.ListOptions{})
-						if err != nil {
-							return fmt.Errorf("unable to get build list for %s", entry)
-						}
+						build, err = findFirstBuild(client, owner, name, func(b *drone.Build) bool {
+							return b.Source == branch && b.Status == drone.StatusPassing
+						})
 
-						for _, b := range builds {
-							if b.Source == branch && b.Status == drone.StatusPassing {
-								build = b
-								break
-							}
-						}
-						if build == nil {
-							return fmt.Errorf("unable to get last successful build for %s", entry)
+						if err != nil {
+							return fmt.Errorf("unable to get last successful build for %s: %w", entry, err)
 						}
 					} else {
 						// Get build by number
@@ -179,20 +204,13 @@ func (p *Plugin) Execute() error {
 					waiting = true
 					continue
 				} else if p.settings.LastSuccessful && build.Status != drone.StatusPassing {
-					builds, err := client.BuildList(owner, name, drone.ListOptions{})
-					if err != nil {
-						return fmt.Errorf("unable to get build list for %s", entry)
-					}
 
-					build = nil
-					for _, b := range builds {
-						if b.Source == branch && b.Status == drone.StatusPassing {
-							build = b
-							break
-						}
-					}
-					if build == nil {
-						return fmt.Errorf("unable to get last successful build for %s", entry)
+					build, err = findFirstBuild(client, owner, name, func(b *drone.Build) bool {
+						return b.Source == branch && b.Status == drone.StatusPassing
+					})
+
+					if err != nil {
+						return fmt.Errorf("unable to get last successful build for %s: %w", entry, err)
 					}
 				}
 
