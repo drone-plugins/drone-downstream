@@ -36,7 +36,7 @@ type Settings struct {
 }
 
 var (
-	buildNotFoundErr = fmt.Errorf("build not found")
+	errBuildNotFound = fmt.Errorf("build not found")
 )
 
 // Validate handles the settings validation of the plugin.
@@ -97,7 +97,7 @@ func findFirstBuild(client drone.Client, owner, name string, cond func(*drone.Bu
 			break
 		}
 	}
-	return nil, buildNotFoundErr
+	return nil, errBuildNotFound
 }
 
 // Execute provides the implementation of the plugin.
