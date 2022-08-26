@@ -304,16 +304,6 @@ def manifest(ctx):
           'ignore_missing': 'true',
         },
       },
-      {
-        'name': 'microbadger',
-        'image': 'plugins/webhook',
-        'pull': 'always',
-        'settings': {
-          'urls': {
-            'from_secret': 'microbadger_url',
-          },
-        },
-      },
     ],
     'depends_on': [],
     'trigger': {
