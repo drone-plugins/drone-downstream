@@ -4,7 +4,7 @@ def main(ctx):
   stages = [
     linux(ctx, 'amd64'),
     linux(ctx, 'arm64'),
-    linux(ctx, 'arm'),
+    # linux(ctx, 'arm'), temporarily disabled
     windows(ctx, '1903'),
     windows(ctx, '1809'),
   ]
@@ -33,9 +33,10 @@ def testing(ctx):
     'steps': [
       {
         'name': 'staticcheck',
-        'image': 'golang:1.14',
+        'image': 'golang:1.17',
         'pull': 'always',
         'commands': [
+          'go get honnef.co/go/tools/cmd/staticcheck',
           'go run honnef.co/go/tools/cmd/staticcheck ./...',
         ],
         'volumes': [
@@ -47,9 +48,10 @@ def testing(ctx):
       },
       {
         'name': 'lint',
-        'image': 'golang:1.14',
+        'image': 'golang:1.17',
         'pull': 'always',
         'commands': [
+          'go get golang.org/x/lint/golint',
           'go run golang.org/x/lint/golint -set_exit_status ./...',
         ],
         'volumes': [
@@ -61,7 +63,7 @@ def testing(ctx):
       },
       {
         'name': 'vet',
-        'image': 'golang:1.14',
+        'image': 'golang:1.17',
         'pull': 'always',
         'commands': [
           'go vet ./...',
@@ -75,7 +77,7 @@ def testing(ctx):
       },
       {
         'name': 'test',
-        'image': 'golang:1.14',
+        'image': 'golang:1.17',
         'pull': 'always',
         'commands': [
           'go test -cover ./...',
@@ -146,7 +148,7 @@ def linux(ctx, arch):
     'steps': [
       {
         'name': 'environment',
-        'image': 'golang:1.14',
+        'image': 'golang:1.17',
         'pull': 'always',
         'environment': {
           'CGO_ENABLED': '0',
@@ -158,7 +160,7 @@ def linux(ctx, arch):
       },
       {
         'name': 'build',
-        'image': 'golang:1.14',
+        'image': 'golang:1.17',
         'pull': 'always',
         'environment': {
           'CGO_ENABLED': '0',
@@ -167,7 +169,7 @@ def linux(ctx, arch):
       },
       {
         'name': 'executable',
-        'image': 'golang:1.14',
+        'image': 'golang:1.17',
         'pull': 'always',
         'commands': [
           './release/linux/%s/drone-downstream --help' % (arch),
@@ -300,16 +302,6 @@ def manifest(ctx):
           },
           'spec': 'docker/manifest.tmpl',
           'ignore_missing': 'true',
-        },
-      },
-      {
-        'name': 'microbadger',
-        'image': 'plugins/webhook',
-        'pull': 'always',
-        'settings': {
-          'urls': {
-            'from_secret': 'microbadger_url',
-          },
         },
       },
     ],
