@@ -157,7 +157,7 @@ func (p *Plugin) Execute() error {
 					if p.settings.LastSuccessful {
 						// Get the last successful build of branch
 						build, err = findFirstBuild(client, owner, name, func(b *drone.Build) bool {
-							return b.Source == branch && b.Status == drone.StatusPassing
+							return b.Source == branch && b.Status == drone.StatusPassing && b.Event == "push"
 						})
 
 						if err != nil {
@@ -206,7 +206,7 @@ func (p *Plugin) Execute() error {
 				} else if p.settings.LastSuccessful && build.Status != drone.StatusPassing {
 
 					build, err = findFirstBuild(client, owner, name, func(b *drone.Build) bool {
-						return b.Source == branch && b.Status == drone.StatusPassing
+						return b.Source == branch && b.Status == drone.StatusPassing && b.Event == "push"
 					})
 
 					if err != nil {
