@@ -17,23 +17,13 @@ manifests:
       architecture: arm64
       os: linux
       variant: v8
-  - image: plugins/downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}windows-2004-amd64
-    platform:
-      architecture: amd64
-      os: windows
-      version: 2004
-  - image: plugins/downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}windows-1909-amd64
-    platform:
-      architecture: amd64
-      os: windows
-      version: 1909
-  - image: plugins/downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}windows-1903-amd64
-    platform:
-      architecture: amd64
-      os: windows
-      version: 1903
   - image: plugins/downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}windows-1809-amd64
     platform:
       architecture: amd64
       os: windows
       version: 1809
+    - image: plugins/downstream:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}windows-1809-ltsc2022-amd64
+    platform:
+      architecture: amd64
+      os: windows
+      version: ltsc2022
