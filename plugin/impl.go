@@ -136,8 +136,8 @@ func (p *Plugin) Execute() error {
 		waiting := false
 
 		timeout := time.After(p.settings.Timeout)
-		//lint:ignore SA1015 refactor later
-		tick := time.Tick(1 * time.Second)
+
+		tick := time.Tick(1 * time.Second) // nolint:staticcheck
 
 		var err error
 
