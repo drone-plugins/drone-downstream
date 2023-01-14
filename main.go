@@ -28,11 +28,12 @@ func main() {
 	}
 
 	app := &cli.App{
-		Name:    "drone-downstream",
-		Usage:   "trigger a downstream drone build",
-		Version: version,
-		Flags:   append(settingsFlags(settings), urfave.Flags()...),
-		Action:  run(settings),
+		Name:                      "drone-downstream",
+		Usage:                     "trigger a downstream drone build",
+		Version:                   version,
+		Flags:                     append(settingsFlags(settings), urfave.Flags()...),
+		Action:                    run(settings),
+		DisableSliceFlagSeparator: true,
 	}
 
 	if err := app.Run(os.Args); err != nil {

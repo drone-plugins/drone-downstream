@@ -6,7 +6,7 @@ require (
 	github.com/drone-plugins/drone-plugin-lib v0.4.0
 	github.com/drone/drone-go v1.7.1
 	github.com/joho/godotenv v1.4.0
-	github.com/urfave/cli/v2 v2.11.2
+	github.com/urfave/cli/v2 v2.23.7
 	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
 )
 
