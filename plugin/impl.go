@@ -146,7 +146,7 @@ func (p *Plugin) Execute() error {
 
 		timeout := time.After(p.settings.Timeout)
 
-		tick := time.Tick(1 * time.Second) // nolint:staticcheck
+		tick := time.Tick(1 * time.Second) //nolint:all
 
 		var err error
 
@@ -344,8 +344,7 @@ func blockUntilBuildIsFinished(p *Plugin, client drone.Client, namespace, name s
 
 	timeout := time.After(p.settings.BlockTimeout)
 
-	//lint:ignore SA1015 refactor later
-	tick := time.Tick(10 * time.Second)
+	tick := time.Tick(10 * time.Second) //nolint:all
 
 	// listen for SIGINT and SIGTERM to cancel downstream build when stopping this executable
 	// this does not work in drone because drone uses SIGKILL to terminate its containers
