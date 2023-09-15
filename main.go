@@ -128,5 +128,18 @@ func settingsFlags(settings *plugin.Settings) []cli.Flag {
 			EnvVars:     []string{"PLUGIN_DEPLOY"},
 			Destination: &settings.Deploy,
 		},
+		&cli.BoolFlag{
+			Name:        "block",
+			Usage:       "Block until the triggered build is finished, makes this build fail if triggered build fails",
+			EnvVars:     []string{"PLUGIN_BLOCK"},
+			Destination: &settings.Block,
+		},
+		&cli.DurationFlag{
+			Name:        "blockTimeout",
+			Value:       time.Duration(60) * time.Minute,
+			Usage:       "How long to block until the triggered build is finished",
+			EnvVars:     []string{"PLUGIN_BLOCK_TIMEOUT"},
+			Destination: &settings.BlockTimeout,
+		},
 	}
 }
