@@ -2,6 +2,8 @@ module github.com/drone-plugins/drone-downstream
 
 go 1.20
 
+toolchain go1.26.10
+
 require (
 	github.com/drone-plugins/drone-plugin-lib v0.4.1
 	github.com/drone/drone-go v1.7.1
